@@ -1,5 +1,6 @@
 const test = require('tape');
 const {
+  validate,
   bestHighCard,
   best2Pairs,
   bestPair,
@@ -121,5 +122,15 @@ test('best pair', t => {
   t.deepEqual(bestHighCard(ss('Kc Kh 7s 7c Kd')), [13, 13, 13, 7, 7]);
   t.deepEqual(bestHighCard(ss('Ac Kh Kd 7s 7c')), [14, 13, 13, 7, 7]);
   t.deepEqual(bestHighCard(ss('2c 3c 4c Ac')), [14, 4, 3, 2]);
+  t.end();
+});
+
+test('validate', t => {
+  t.ok(validate([...ss('Kc Kh 7s 7c Kd')]));
+  t.notok(validate([...ss('Xc Kh 7s 7c Kd')]));
+  t.notok(validate([...ss('Xq Kh 7s 7c Kd')]));
+  t.notok(validate([...ss('2q Kh 7s 7c Kd')]));
+  t.notok(validate([...ss('11h Kh 7s 7c Kd')]), '11 is not ok');
+  t.notok(validate([...ss('101h Kh 7s 7c Kd')]));
   t.end();
 });

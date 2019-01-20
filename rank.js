@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
 var shuffle = require('shuffle-array');
 const SUITS = 's,c,h,d'.split(',');
+const SUITSSET = new Set(SUITS);
 // const SUITS = '♠︎,♣︎,♥︎,♦︎'.split(',');
 // const white = '♡♢♤♧';
 const Ace = 'A';
@@ -11,41 +12,48 @@ const Queen = 'Q';
 const King = 'K';
 const ACERANK = 14;
 const SEP = '/';
+const ALLRANKS = makeAllRanks();
+const ALLRANKSSET = new Set(ALLRANKS);
+const royalFlushes = SUITS.map(s => ['10', Jack, Queen, King, Ace].map(n => mergeNumberSuit(n, s)));
+const { fullDeck } = makeAllCardsSet();
 function mergeNumberSuit(rank, suit) { return rank + SEP + suit; }
 function cardToSuit(card) { return card.split(SEP)[1]; }
 function cardToRank(card) { return card.split(SEP)[0]; }
 function rankToNum(rank) {
-    let ret = parseInt(rank) || (rank === Ace && 1) || (rank === Jack && 11) || (rank === Queen && 12) ||
+    return parseInt(rank) || (rank === Ace && 1) || (rank === Jack && 11) || (rank === Queen && 12) ||
         (rank === King && 13) || 0;
-    if (ret === 0) {
-        throw new Error('unknown rank');
-    }
-    return ret;
 }
 exports.rankToNum = rankToNum;
 function bestRankAcesHigh(ranks) { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
 function sortAscendingAcesHigh(arr) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => b - a); }
 function sortDescendingAcesHigh(arr) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => a - b); }
-function groupBySuit(list) {
-    let ret = utils_1.groupBy(list, cardToSuit);
-    if (!utils_1.isSuperset(new Set(SUITS), new Set(ret.keys()))) {
-        throw new Error('unknown suits');
+function groupBySuit(list) { return utils_1.groupBy(list, cardToSuit); }
+function validate(hand) {
+    let suits = hand.map(cardToSuit);
+    if (!utils_1.isSuperset(SUITSSET, new Set(suits))) {
+        return false;
     }
-    return ret;
+    let ranks = hand.map(cardToRank);
+    if (!utils_1.isSuperset(ALLRANKSSET, new Set(ranks))) {
+        return false;
+    }
+    let num = ranks.map(rankToNum);
+    return num.every(n => n >= 1 && n < ACERANK);
 }
-function makeSuitToCardsMap() {
-    let ranks = Array.from(Array(10), (_, n) => n + 1).filter(n => n >= 2 && n <= 10).map(n => n.toString()).concat([
+exports.validate = validate;
+function makeAllRanks() {
+    return Array.from(Array(10), (_, n) => n + 1).filter(n => n >= 2 && n <= 10).map(n => n.toString()).concat([
         Ace, Jack, Queen, King
     ]);
-    return new Map(SUITS.map(s => [s, ranks.map(n => mergeNumberSuit(n, s))]));
+}
+function makeSuitToCardsMap() {
+    return new Map(SUITS.map(s => [s, ALLRANKS.map(n => mergeNumberSuit(n, s))]));
 }
 function makeAllCardsSet() {
     let suitToCards = makeSuitToCardsMap();
     let fullDeck = new Set([].concat(...suitToCards.values()));
     return { fullDeck, suitToCards };
 }
-const royalFlushes = SUITS.map(s => ['10', Jack, Queen, King, Ace].map(n => mergeNumberSuit(n, s)));
-const { fullDeck, suitToCards } = makeAllCardsSet();
 function isRoyalFlush(handSet) {
     return royalFlushes.some(arr => arr.every(card => handSet.has(card)));
 }
