@@ -124,13 +124,13 @@ function bestNOfAKind(set: HandSet, N: number): number {
 }
 export function best4OfAKind(set: HandSet): number { return bestNOfAKind(set, 4); }
 
-type TripMetadata = {
-  tripUniverse?: number[],
+type RepeatMetadata = {
+  universe?: number[],
   perRank?: Map<string, string[]>
 };
 export function best3OfAKind(
     set: HandSet,
-    metadata: undefined|TripMetadata = undefined,
+    metadata: undefined|RepeatMetadata = undefined,
     ): number {
   let perRank = groupBy(set.values(), cardToRank);
   let quads = allNOfAKind(set, 4, perRank);
@@ -139,20 +139,43 @@ export function best3OfAKind(
   if (tripUniverse.length === 0) { return 0; } // no trips
   if (metadata) {
     metadata.perRank = perRank;
-    metadata.tripUniverse = tripUniverse; // pass by reference, so the pop below will be visible outside
+    metadata.universe = tripUniverse; // pass by reference, so the pop below will be visible outside
   }
   return tripUniverse.pop() || 0; // TypeScript pacification
 }
 
 export function bestFullHouse(set: HandSet): [number, number] {
-  let metadataTrip: TripMetadata = {};
+  let metadataTrip: RepeatMetadata = {};
   let bestTrip = best3OfAKind(set, metadataTrip);
   if (bestTrip === 0) { return [0, 0]; }
   let pairs = allNOfAKind(set, 2, metadataTrip.perRank);
-  let pairUniverse = sortAscendingAcesHigh((metadataTrip.tripUniverse || []).concat(pairs));
+  let pairUniverse = sortAscendingAcesHigh((metadataTrip.universe || []).concat(pairs));
   if (pairUniverse.length === 0) { return [0, 0]; } // no pairs
   let bestPair = pairUniverse.pop() || -1;
   return [bestTrip, bestPair];
+}
+
+export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = undefined): [number, number] {
+  let perRank = groupBy(set.values(), cardToRank);
+  let quads = allNOfAKind(set, 4, perRank);
+  let trips = allNOfAKind(set, 3, perRank);
+  let pairs = allNOfAKind(set, 2, perRank);
+  let pairUniverse = sortAscendingAcesHigh(quads.concat(trips).concat(pairs));
+  if (metadata) {
+    metadata.perRank = perRank;
+    metadata.universe = pairUniverse;
+  }
+  if (pairUniverse.length < 2) { return [0, 0]; }
+  let n = pairUniverse.length;
+  return [pairUniverse[n - 1], pairUniverse[n - 2]];
+}
+
+export function bestPair(set: HandSet): number {
+  let metadata: RepeatMetadata = {};
+  let twoBestPairs = best2Pairs(set, metadata);
+  if (twoBestPairs[0] > 0) { return twoBestPairs[0]; }
+  if (metadata.universe && metadata.universe.length > 0) { return metadata.universe[metadata.universe.length - 1]; }
+  return 0;
 }
 
 export function value(hand: Hand): string {

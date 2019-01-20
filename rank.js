@@ -146,7 +146,7 @@ function best3OfAKind(set, metadata = undefined) {
     } // no trips
     if (metadata) {
         metadata.perRank = perRank;
-        metadata.tripUniverse = tripUniverse; // pass by reference, so the pop below will be visible outside
+        metadata.universe = tripUniverse; // pass by reference, so the pop below will be visible outside
     }
     return tripUniverse.pop() || 0; // TypeScript pacification
 }
@@ -158,7 +158,7 @@ function bestFullHouse(set) {
         return [0, 0];
     }
     let pairs = allNOfAKind(set, 2, metadataTrip.perRank);
-    let pairUniverse = sortAscendingAcesHigh((metadataTrip.tripUniverse || []).concat(pairs));
+    let pairUniverse = sortAscendingAcesHigh((metadataTrip.universe || []).concat(pairs));
     if (pairUniverse.length === 0) {
         return [0, 0];
     } // no pairs
@@ -166,6 +166,35 @@ function bestFullHouse(set) {
     return [bestTrip, bestPair];
 }
 exports.bestFullHouse = bestFullHouse;
+function best2Pairs(set, metadata = undefined) {
+    let perRank = utils_1.groupBy(set.values(), cardToRank);
+    let quads = allNOfAKind(set, 4, perRank);
+    let trips = allNOfAKind(set, 3, perRank);
+    let pairs = allNOfAKind(set, 2, perRank);
+    let pairUniverse = sortAscendingAcesHigh(quads.concat(trips).concat(pairs));
+    if (metadata) {
+        metadata.perRank = perRank;
+        metadata.universe = pairUniverse;
+    }
+    if (pairUniverse.length < 2) {
+        return [0, 0];
+    }
+    let n = pairUniverse.length;
+    return [pairUniverse[n - 1], pairUniverse[n - 2]];
+}
+exports.best2Pairs = best2Pairs;
+function bestPair(set) {
+    let metadata = {};
+    let twoBestPairs = best2Pairs(set, metadata);
+    if (twoBestPairs[0] > 0) {
+        return twoBestPairs[0];
+    }
+    if (metadata.universe && metadata.universe.length > 0) {
+        return metadata.universe[metadata.universe.length - 1];
+    }
+    return 0;
+}
+exports.bestPair = bestPair;
 function value(hand) {
     let set = new Set(hand);
     if (isRoyalFlush(set)) {
