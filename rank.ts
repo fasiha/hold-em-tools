@@ -20,7 +20,8 @@ export function rankToNum(rank: string): number {
   if (ret === 0) { throw new Error('unknown rank'); }
   return ret;
 }
-function bestRank(ranks: number[]): number { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
+function bestRankAcesHigh(ranks: number[]): number { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
+function sortAscendingAcesHigh(arr: number[]) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => b - a); }
 function groupBySuit(list: IterableIterator<string>|Hand): Map<string, Hand> {
   let ret = groupBy(list, cardToSuit);
   if (!isSuperset(new Set(SUITS), new Set(ret.keys()))) { throw new Error('unknown suits'); }
@@ -89,9 +90,9 @@ export function bestFlush(set: HandSet): number {
   const perSuit = groupBySuit(set.values());
   let maxRanks: number[] = [];
   for (const cards of perSuit.values()) {
-    if (cards.length >= 5) { maxRanks.push(bestRank(cards.map(c => rankToNum(cardToRank(c))))); }
+    if (cards.length >= 5) { maxRanks.push(bestRankAcesHigh(cards.map(c => rankToNum(cardToRank(c))))); }
   }
-  return maxRanks.length === 0 ? 0 : bestRank(maxRanks);
+  return maxRanks.length === 0 ? 0 : bestRankAcesHigh(maxRanks);
 }
 function isFlush(set: HandSet): boolean { return !!bestFlush(set); }
 
@@ -108,15 +109,36 @@ export function bestStraightFlush(set: HandSet): number {
 }
 function isStraightFlush(set: HandSet): boolean { return !!bestStraightFlush(set); }
 
-function bestNOfAKind(set: HandSet, N: number): number {
-  let perRank = groupBy(set.values(), cardToRank);
-  let best: string[] = [];
+function nOfAKindHelper(set: HandSet): Map<string, Hand> { return groupBy(set.values(), cardToRank); }
+function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefined = undefined): number[] {
+  if (!perRank) { perRank = nOfAKindHelper(set); }
+  let all: string[] = [];
   for (const [rank, hand] of perRank) {
-    if (hand.length === N) { best.push(rank); }
+    if (hand.length === N) { all.push(rank); }
   }
-  return best.length === 0 ? 0 : bestRank(best.map(rankToNum));
+  return all.map(rankToNum);
+}
+function bestNOfAKind(set: HandSet, N: number): number {
+  let all = allNOfAKind(set, N);
+  return all.length === 0 ? 0 : bestRankAcesHigh(all);
 }
 export function best4OfAKind(set: HandSet): number { return bestNOfAKind(set, 4); }
+
+export function bestFullHouse(set: HandSet): [number, number] {
+  let bestTrip = 0;
+  let bestPair = 0;
+  let perRank = groupBy(set.values(), cardToRank);
+  let quads = allNOfAKind(set, 4, perRank);
+  let trips = allNOfAKind(set, 3, perRank);
+  let tripUniverse = sortAscendingAcesHigh(quads.concat(trips));
+  if (tripUniverse.length === 0) { return [0, 0]; } // no trips
+  bestTrip = tripUniverse.pop() || -1;              // TypeScript pacification
+  let pairs = allNOfAKind(set, 2, perRank);
+  let pairUniverse = sortAscendingAcesHigh(tripUniverse.concat(pairs));
+  if (pairUniverse.length === 0) { return [0, 0]; } // no pairs
+  bestPair = pairUniverse.pop() || -1;
+  return [bestTrip, bestPair];
+}
 
 export function value(hand: Hand): string {
   let set = new Set(hand);

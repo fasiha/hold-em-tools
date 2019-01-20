@@ -1,5 +1,5 @@
 const test = require('tape');
-const {best4OfAKind, bestFlush, bestStraight, bestStraightFlush} = require('./rank');
+const {bestFullHouse, best4OfAKind, bestFlush, bestStraight, bestStraightFlush} = require('./rank');
 
 const SEP = '/';
 const ss = s => new Set(s.trim().split(' ').map(s => s.slice(0, -1) + SEP + s.slice(-1)));
@@ -31,5 +31,26 @@ test('4 of a kind', t => {
   t.equal(best4OfAKind(ss('3h 3c 3d 3s')), 3, 'shuffle really does not matter');
   t.equal(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s')), 4, 'get highest');
   t.equal(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s Ah Ac Ad As')), 14, 'aces high');
+  t.equal(best4OfAKind(ss('3c 3d 3s')), 0, '3 doesn\'t cut it');
+  t.equal(best4OfAKind(ss('3c 3d')), 0, '2 doesn\'t cut it');
+  t.equal(best4OfAKind(ss('3c')), 0, '1 doesn\'t cut it');
+
+  t.end();
+});
+
+test('full house', t => {
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c')), [13, 7]);
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c 7c')), [13, 7], 'two trips ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 7], 'quads and trips ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 7], 'quads and quads ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 7], 'quads quads high-pairs get pairs');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2], 'low quad and high trips means trip');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c')), [2, 7], 'low quad and high pairs means low');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [4, 7], 'many quads and high pair');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6], 'quads can be ignored');
+  t.deepEqual(bestFullHouse(ss('Kc Kh 7s 7c')), [0, 0], 'not full house');
+  t.deepEqual(bestFullHouse(ss('Kc 7s 7d 7h')), [0, 0], 'trip but no pair');
+  t.deepEqual(bestFullHouse(ss('7s 7d 7h')), [0, 0], 'trip and nothing else');
+  t.deepEqual(bestFullHouse(ss('7s 7d')), [0, 0], 'pair and nothing else');
   t.end();
 });

@@ -23,7 +23,8 @@ function rankToNum(rank) {
     return ret;
 }
 exports.rankToNum = rankToNum;
-function bestRank(ranks) { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
+function bestRankAcesHigh(ranks) { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
+function sortAscendingAcesHigh(arr) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => b - a); }
 function groupBySuit(list) {
     let ret = utils_1.groupBy(list, cardToSuit);
     if (!utils_1.isSuperset(new Set(SUITS), new Set(ret.keys()))) {
@@ -94,10 +95,10 @@ function bestFlush(set) {
     let maxRanks = [];
     for (const cards of perSuit.values()) {
         if (cards.length >= 5) {
-            maxRanks.push(bestRank(cards.map(c => rankToNum(cardToRank(c)))));
+            maxRanks.push(bestRankAcesHigh(cards.map(c => rankToNum(cardToRank(c)))));
         }
     }
-    return maxRanks.length === 0 ? 0 : bestRank(maxRanks);
+    return maxRanks.length === 0 ? 0 : bestRankAcesHigh(maxRanks);
 }
 exports.bestFlush = bestFlush;
 function isFlush(set) { return !!bestFlush(set); }
@@ -116,18 +117,45 @@ function bestStraightFlush(set) {
 }
 exports.bestStraightFlush = bestStraightFlush;
 function isStraightFlush(set) { return !!bestStraightFlush(set); }
-function bestNOfAKind(set, N) {
-    let perRank = utils_1.groupBy(set.values(), cardToRank);
-    let best = [];
+function nOfAKindHelper(set) { return utils_1.groupBy(set.values(), cardToRank); }
+function allNOfAKind(set, N, perRank = undefined) {
+    if (!perRank) {
+        perRank = nOfAKindHelper(set);
+    }
+    let all = [];
     for (const [rank, hand] of perRank) {
         if (hand.length === N) {
-            best.push(rank);
+            all.push(rank);
         }
     }
-    return best.length === 0 ? 0 : bestRank(best.map(rankToNum));
+    return all.map(rankToNum);
+}
+function bestNOfAKind(set, N) {
+    let all = allNOfAKind(set, N);
+    return all.length === 0 ? 0 : bestRankAcesHigh(all);
 }
 function best4OfAKind(set) { return bestNOfAKind(set, 4); }
 exports.best4OfAKind = best4OfAKind;
+function bestFullHouse(set) {
+    let bestTrip = 0;
+    let bestPair = 0;
+    let perRank = utils_1.groupBy(set.values(), cardToRank);
+    let quads = allNOfAKind(set, 4, perRank);
+    let trips = allNOfAKind(set, 3, perRank);
+    let tripUniverse = sortAscendingAcesHigh(quads.concat(trips));
+    if (tripUniverse.length === 0) {
+        return [0, 0];
+    } // no trips
+    bestTrip = tripUniverse.pop() || -1; // TypeScript pacification
+    let pairs = allNOfAKind(set, 2, perRank);
+    let pairUniverse = sortAscendingAcesHigh(tripUniverse.concat(pairs));
+    if (pairUniverse.length === 0) {
+        return [0, 0];
+    } // no pairs
+    bestPair = pairUniverse.pop() || -1;
+    return [bestTrip, bestPair];
+}
+exports.bestFullHouse = bestFullHouse;
 function value(hand) {
     let set = new Set(hand);
     if (isRoyalFlush(set)) {
