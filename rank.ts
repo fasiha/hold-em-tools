@@ -22,6 +22,7 @@ export function rankToNum(rank: string): number {
 }
 function bestRankAcesHigh(ranks: number[]): number { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
 function sortAscendingAcesHigh(arr: number[]) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => b - a); }
+function sortDescendingAcesHigh(arr: number[]) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => a - b); }
 function groupBySuit(list: IterableIterator<string>|Hand): Map<string, Hand> {
   let ret = groupBy(list, cardToSuit);
   if (!isSuperset(new Set(SUITS), new Set(ret.keys()))) { throw new Error('unknown suits'); }
@@ -176,6 +177,10 @@ export function bestPair(set: HandSet): number {
   if (twoBestPairs[0] > 0) { return twoBestPairs[0]; }
   if (metadata.universe && metadata.universe.length > 0) { return metadata.universe[metadata.universe.length - 1]; }
   return 0;
+}
+
+export function bestHighCard(set: HandSet): number[] {
+  return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
 }
 
 export function value(hand: Hand): string {

@@ -1,6 +1,15 @@
 const test = require('tape');
-const {best2Pairs, bestPair, best3OfAKind, bestFullHouse, best4OfAKind, bestFlush, bestStraight, bestStraightFlush} =
-    require('./rank');
+const {
+  bestHighCard,
+  best2Pairs,
+  bestPair,
+  best3OfAKind,
+  bestFullHouse,
+  best4OfAKind,
+  bestFlush,
+  bestStraight,
+  bestStraightFlush
+} = require('./rank');
 
 const SEP = '/';
 const ss = s => new Set(s.trim().split(' ').map(s => s.slice(0, -1) + SEP + s.slice(-1)));
@@ -105,5 +114,12 @@ test('best pair', t => {
   t.equal(bestPair(ss('7s 7d 7h')), 7, 'trip and nothing else');
   t.equal(bestPair(ss('7s 7d')), 7, 'pair and nothing else');
   t.equal(bestPair(ss('7s')), 0, 'single');
+  t.end();
+});
+
+test('best pair', t => {
+  t.deepEqual(bestHighCard(ss('Kc Kh 7s 7c Kd')), [13, 13, 13, 7, 7]);
+  t.deepEqual(bestHighCard(ss('Ac Kh Kd 7s 7c')), [14, 13, 13, 7, 7]);
+  t.deepEqual(bestHighCard(ss('2c 3c 4c Ac')), [14, 4, 3, 2]);
   t.end();
 });

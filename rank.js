@@ -25,6 +25,7 @@ function rankToNum(rank) {
 exports.rankToNum = rankToNum;
 function bestRankAcesHigh(ranks) { return Math.max(...ranks.map(r => r === 1 ? ACERANK : r)); }
 function sortAscendingAcesHigh(arr) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => b - a); }
+function sortDescendingAcesHigh(arr) { return arr.map(r => r === 1 ? ACERANK : r).sort((b, a) => a - b); }
 function groupBySuit(list) {
     let ret = utils_1.groupBy(list, cardToSuit);
     if (!utils_1.isSuperset(new Set(SUITS), new Set(ret.keys()))) {
@@ -195,6 +196,10 @@ function bestPair(set) {
     return 0;
 }
 exports.bestPair = bestPair;
+function bestHighCard(set) {
+    return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
+}
+exports.bestHighCard = bestHighCard;
 function value(hand) {
     let set = new Set(hand);
     if (isRoyalFlush(set)) {
