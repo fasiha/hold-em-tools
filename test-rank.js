@@ -1,5 +1,5 @@
 const test = require('tape');
-const {bestFullHouse, best4OfAKind, bestFlush, bestStraight, bestStraightFlush} = require('./rank');
+const {best3OfAKind, bestFullHouse, best4OfAKind, bestFlush, bestStraight, bestStraightFlush} = require('./rank');
 
 const SEP = '/';
 const ss = s => new Set(s.trim().split(' ').map(s => s.slice(0, -1) + SEP + s.slice(-1)));
@@ -52,5 +52,22 @@ test('full house', t => {
   t.deepEqual(bestFullHouse(ss('Kc 7s 7d 7h')), [0, 0], 'trip but no pair');
   t.deepEqual(bestFullHouse(ss('7s 7d 7h')), [0, 0], 'trip and nothing else');
   t.deepEqual(bestFullHouse(ss('7s 7d')), [0, 0], 'pair and nothing else');
+  t.end();
+});
+
+test('3 of a kind', t => {
+  t.equal(best3OfAKind(ss('Kc Kh Kd 7s 7c')), 13);
+  t.equal(best3OfAKind(ss('Kc Kh Kd 7s 7c 7c')), 13, 'two trips ok');
+  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d')), 13, 'quads and trips ok');
+  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), 13, 'quads and quads ok');
+  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), 13, 'quads quads high-pairs get pairs');
+  t.equal(best3OfAKind(ss('2c 2h 2d 2s 7s 7c 7d')), 7, 'low quad and high trips means trip');
+  t.equal(best3OfAKind(ss('2c 2h 2d 2s 7s 7c')), 2, 'low quad and high pairs means low');
+  t.equal(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), 4, 'many quads and high pair');
+  t.equal(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), 7, 'quads can be ignored');
+  t.equal(best3OfAKind(ss('Kc Kh 7s 7c')), 0, 'not full house');
+  t.equal(best3OfAKind(ss('Kc 7s 7d 7h')), 7, 'trip but no pair');
+  t.equal(best3OfAKind(ss('7s 7d 7h')), 7, 'trip and nothing else');
+  t.equal(best3OfAKind(ss('7s 7d')), 0, 'pair and nothing else');
   t.end();
 });

@@ -136,23 +136,33 @@ function bestNOfAKind(set, N) {
 }
 function best4OfAKind(set) { return bestNOfAKind(set, 4); }
 exports.best4OfAKind = best4OfAKind;
-function bestFullHouse(set) {
-    let bestTrip = 0;
-    let bestPair = 0;
+function best3OfAKind(set, metadata = undefined) {
     let perRank = utils_1.groupBy(set.values(), cardToRank);
     let quads = allNOfAKind(set, 4, perRank);
     let trips = allNOfAKind(set, 3, perRank);
     let tripUniverse = sortAscendingAcesHigh(quads.concat(trips));
     if (tripUniverse.length === 0) {
-        return [0, 0];
+        return 0;
     } // no trips
-    bestTrip = tripUniverse.pop() || -1; // TypeScript pacification
-    let pairs = allNOfAKind(set, 2, perRank);
-    let pairUniverse = sortAscendingAcesHigh(tripUniverse.concat(pairs));
+    if (metadata) {
+        metadata.perRank = perRank;
+        metadata.tripUniverse = tripUniverse; // pass by reference, so the pop below will be visible outside
+    }
+    return tripUniverse.pop() || 0; // TypeScript pacification
+}
+exports.best3OfAKind = best3OfAKind;
+function bestFullHouse(set) {
+    let metadataTrip = {};
+    let bestTrip = best3OfAKind(set, metadataTrip);
+    if (bestTrip === 0) {
+        return [0, 0];
+    }
+    let pairs = allNOfAKind(set, 2, metadataTrip.perRank);
+    let pairUniverse = sortAscendingAcesHigh((metadataTrip.tripUniverse || []).concat(pairs));
     if (pairUniverse.length === 0) {
         return [0, 0];
     } // no pairs
-    bestPair = pairUniverse.pop() || -1;
+    let bestPair = pairUniverse.pop() || -1;
     return [bestTrip, bestPair];
 }
 exports.bestFullHouse = bestFullHouse;
