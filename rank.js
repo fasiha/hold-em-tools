@@ -116,7 +116,18 @@ function bestStraightFlush(set) {
 }
 exports.bestStraightFlush = bestStraightFlush;
 function isStraightFlush(set) { return !!bestStraightFlush(set); }
-// function best4OfAKind(set: HandSet): number {}
+function bestNOfAKind(set, N) {
+    let perRank = utils_1.groupBy(set.values(), cardToRank);
+    let best = [];
+    for (const [rank, hand] of perRank) {
+        if (hand.length === N) {
+            best.push(rank);
+        }
+    }
+    return best.length === 0 ? 0 : bestRank(best.map(rankToNum));
+}
+function best4OfAKind(set) { return bestNOfAKind(set, 4); }
+exports.best4OfAKind = best4OfAKind;
 function value(hand) {
     let set = new Set(hand);
     if (isRoyalFlush(set)) {

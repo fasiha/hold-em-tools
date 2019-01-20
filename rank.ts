@@ -108,7 +108,15 @@ export function bestStraightFlush(set: HandSet): number {
 }
 function isStraightFlush(set: HandSet): boolean { return !!bestStraightFlush(set); }
 
-// function best4OfAKind(set: HandSet): number {}
+function bestNOfAKind(set: HandSet, N: number): number {
+  let perRank = groupBy(set.values(), cardToRank);
+  let best: string[] = [];
+  for (const [rank, hand] of perRank) {
+    if (hand.length === N) { best.push(rank); }
+  }
+  return best.length === 0 ? 0 : bestRank(best.map(rankToNum));
+}
+export function best4OfAKind(set: HandSet): number { return bestNOfAKind(set, 4); }
 
 export function value(hand: Hand): string {
   let set = new Set(hand);
