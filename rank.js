@@ -190,23 +190,47 @@ function best2Pairs(set, metadata = undefined) {
         return [0, 0];
     }
     let n = pairUniverse.length;
+    // Don't mutate pairUniverse, let it be used fully outside
     return [pairUniverse[n - 1], pairUniverse[n - 2]];
 }
 exports.best2Pairs = best2Pairs;
+function removeAtMostN_viamaps(arr, elt, atmost) {
+    let map = utils_1.groupBy(arr, x => x);
+    map.set(elt, (map.get(elt) || []).slice(atmost));
+    return [].concat(...map.values());
+}
+function removeAtMostN_vialoop(arr, elt, atmost) {
+    let ret = [];
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] !== elt || (arr[i] === elt && (atmost--) <= 0)) {
+            ret.push(arr[i]);
+        }
+    }
+    return ret;
+}
+/**
+ * Returned array contains up to four elements: the first is the rank of the highest pair, and then three kickers, in
+ * descending order, to break ties. If no pairs are found, four zeros are returned.
+ * @param set
+ */
 function bestPair(set) {
     let metadata = {};
-    let twoBestPairs = best2Pairs(set, metadata);
-    if (twoBestPairs[0] > 0) {
-        return twoBestPairs[0];
-    }
+    best2Pairs(set, metadata);
     if (metadata.universe && metadata.universe.length > 0) {
-        return metadata.universe[metadata.universe.length - 1];
+        let ret = metadata.universe[metadata.universe.length - 1];
+        let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), ret, 2);
+        let sorted = sortDescendingAcesHigh(mutable);
+        return [ret].concat(sorted.slice(0, 3));
     }
-    return 0;
+    return Array.from(Array(4), _ => 0);
 }
 exports.bestPair = bestPair;
+/**
+ * Returned array contains the high card and up to four kickers, in descending order, to break ties.
+ * @param set
+ */
 function bestHighCard(set) {
-    return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
+    return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c)))).slice(0, 5);
 }
 exports.bestHighCard = bestHighCard;
 const scorefnName = [
@@ -281,7 +305,7 @@ function dealRoundNoFolding(nplayers, seed) {
 }
 exports.dealRoundNoFolding = dealRoundNoFolding;
 if (require.main === module) {
-    let { pockets, community, detailed } = dealRoundNoFolding(4);
+    let { pockets, community, detailed } = dealRoundNoFolding(4, 1);
     console.log('pockets\n', pockets);
     console.log('community\n', community);
     console.log('detailed\n', detailed);

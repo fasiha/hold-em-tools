@@ -175,19 +175,46 @@ export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = un
   }
   if (pairUniverse.length < 2) { return [0, 0]; }
   let n = pairUniverse.length;
+  // Don't mutate pairUniverse, let it be used fully outside
   return [pairUniverse[n - 1], pairUniverse[n - 2]];
 }
 
-export function bestPair(set: HandSet): number {
-  let metadata: RepeatMetadata = {};
-  let twoBestPairs = best2Pairs(set, metadata);
-  if (twoBestPairs[0] > 0) { return twoBestPairs[0]; }
-  if (metadata.universe && metadata.universe.length > 0) { return metadata.universe[metadata.universe.length - 1]; }
-  return 0;
+function removeAtMostN_viamaps<T>(arr: T[], elt: T, atmost: number): T[] {
+  let map = groupBy(arr, x => x);
+  map.set(elt, (map.get(elt) || []).slice(atmost));
+  return ([] as T[]).concat(...map.values());
+}
+function removeAtMostN_vialoop<T>(arr: T[], elt: T, atmost: number): T[] {
+  let ret = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] !== elt || (arr[i] === elt && (atmost--) <= 0)) { ret.push(arr[i]); }
+  }
+  return ret;
 }
 
+/**
+ * Returned array contains up to four elements: the first is the rank of the highest pair, and then three kickers, in
+ * descending order, to break ties. If no pairs are found, four zeros are returned.
+ * @param set
+ */
+export function bestPair(set: HandSet): number[] {
+  let metadata: RepeatMetadata = {};
+  best2Pairs(set, metadata);
+  if (metadata.universe && metadata.universe.length > 0) {
+    let ret = metadata.universe[metadata.universe.length - 1];
+    let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), ret, 2);
+    let sorted = sortDescendingAcesHigh(mutable);
+    return [ret].concat(sorted.slice(0, 3));
+  }
+  return Array.from(Array(4), _ => 0);
+}
+
+/**
+ * Returned array contains the high card and up to four kickers, in descending order, to break ties.
+ * @param set
+ */
 export function bestHighCard(set: HandSet): number[] {
-  return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
+  return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c)))).slice(0, 5);
 }
 
 type ScoreFunc =
@@ -255,7 +282,7 @@ export function dealRoundNoFolding(nplayers: number, seed?: number) {
 }
 
 if (require.main === module) {
-  let {pockets, community, detailed} = dealRoundNoFolding(4);
+  let {pockets, community, detailed} = dealRoundNoFolding(4, 1);
   console.log('pockets\n', pockets)
   console.log('community\n', community);
   console.log('detailed\n', detailed);
