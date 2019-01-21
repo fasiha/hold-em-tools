@@ -1,14 +1,14 @@
 {
-  "name": "poker",
+  "name": "hold-em-tools",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "rank.js",
   "scripts": {
     "test": "tape test-*.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSE",
   "devDependencies": {
     "@types/node": "^10.12.18",
     "knuth-shuffle-seeded": "^1.0.6",
