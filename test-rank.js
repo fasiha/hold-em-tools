@@ -41,15 +41,14 @@ test('bestStraightFlush', t => {
 });
 
 test('4 of a kind', t => {
-  t.equal(best4OfAKind(ss('3c 3d 3h 3s')), 3);
-  t.equal(best4OfAKind(ss('3s 3h 3d 3c')), 3, 'shuffle does not matter');
-  t.equal(best4OfAKind(ss('3h 3c 3d 3s')), 3, 'shuffle really does not matter');
-  t.equal(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s')), 4, 'get highest');
-  t.equal(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s Ah Ac Ad As')), 14, 'aces high');
-  t.equal(best4OfAKind(ss('3c 3d 3s')), 0, '3 doesn\'t cut it');
-  t.equal(best4OfAKind(ss('3c 3d')), 0, '2 doesn\'t cut it');
-  t.equal(best4OfAKind(ss('3c')), 0, '1 doesn\'t cut it');
-
+  t.deepEqual(best4OfAKind(ss('3c 3d 3h 3s')), [3, 0]);
+  t.deepEqual(best4OfAKind(ss('3s 3h 3d 3c')), [3, 0], 'shuffle does not matter');
+  t.deepEqual(best4OfAKind(ss('3h 3c 3d 3s')), [3, 0], 'shuffle really does not matter');
+  t.deepEqual(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s')), [4, 3], 'get highest');
+  t.deepEqual(best4OfAKind(ss('3h 3c 3d 3s 4h 4c 4d 4s Ah Ac Ad As')), [14, 4], 'aces high');
+  t.deepEqual(best4OfAKind(ss('3c 3d 3s')), [0, 0], '3 doesn\'t cut it');
+  t.deepEqual(best4OfAKind(ss('3c 3d')), [0, 0], '2 doesn\'t cut it');
+  t.deepEqual(best4OfAKind(ss('3c')), [0, 0], '1 doesn\'t cut it');
   t.end();
 });
 
@@ -72,19 +71,21 @@ test('full house', t => {
 });
 
 test('3 of a kind', t => {
-  t.equal(best3OfAKind(ss('Kc Kh Kd 7s 7c')), 13);
-  t.equal(best3OfAKind(ss('Kc Kh Kd 7s 7c 7c')), 13, 'two trips ok');
-  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d')), 13, 'quads and trips ok');
-  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), 13, 'quads and quads ok');
-  t.equal(best3OfAKind(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), 13, 'quads quads high-pairs get pairs');
-  t.equal(best3OfAKind(ss('2c 2h 2d 2s 7s 7c 7d')), 7, 'low quad and high trips means trip');
-  t.equal(best3OfAKind(ss('2c 2h 2d 2s 7s 7c')), 2, 'low quad and high pairs means low');
-  t.equal(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), 4, 'many quads and high pair');
-  t.equal(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), 7, 'quads can be ignored');
-  t.equal(best3OfAKind(ss('Kc Kh 7s 7c')), 0, 'not full house');
-  t.equal(best3OfAKind(ss('Kc 7s 7d 7h')), 7, 'trip but no pair');
-  t.equal(best3OfAKind(ss('7s 7d 7h')), 7, 'trip and nothing else');
-  t.equal(best3OfAKind(ss('7s 7d')), 0, 'pair and nothing else');
+  t.deepEqual(best3OfAKind(ss('Ac Ah Ad 7s 7c')), [14, 7, 7], 'aces high');
+  t.deepEqual(best3OfAKind(ss('Kc Kh Kd 7s 7c')), [13, 7, 7]);
+  t.deepEqual(best3OfAKind(ss('Kc Kh Kd 7s 7c 7c')), [13, 7, 7], 'two trips ok');
+  t.deepEqual(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 13, 7], 'quads and trips ok');
+  t.deepEqual(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 13, 7], 'quads and quads ok');
+  t.deepEqual(best3OfAKind(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 13, 7], 'quads quads high-pairs get pairs');
+  t.deepEqual(best3OfAKind(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2, 2], 'low quad and high trips means trip');
+  t.deepEqual(best3OfAKind(ss('2c 2h 2d 2s 7s 7c')), [2, 7, 7], 'low quad and high pairs means low');
+  t.deepEqual(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [4, 7, 7], 'many quads and high pair');
+  t.deepEqual(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6, 6],
+              'quads can be ignored');
+  t.deepEqual(best3OfAKind(ss('Kc Kh 7s 7c')), [0, 0, 0], 'not full house');
+  t.deepEqual(best3OfAKind(ss('Kc 7s 7d 7h')), [7, 13, 0], 'trip but no pair');
+  t.deepEqual(best3OfAKind(ss('7s 7d 7h')), [7, 0, 0], 'trip and nothing else');
+  t.deepEqual(best3OfAKind(ss('7s 7d')), [0, 0, 0], 'pair and nothing else');
   t.end();
 });
 
@@ -103,6 +104,8 @@ test('best two pairs', t => {
   t.deepEqual(best2Pairs(ss('Kc 7s 7d 7h')), [0, 0, 0], 'trip but no pair');
   t.deepEqual(best2Pairs(ss('7s 7d 7h')), [0, 0, 0], 'trip and nothing else');
   t.deepEqual(best2Pairs(ss('7s 7d')), [0, 0, 0], 'pair and nothing else');
+  t.deepEqual(best2Pairs(ss('Ac Ah Ad 7s 7c')), [14, 7, 14], 'aces high');
+
   t.end();
 });
 
@@ -123,6 +126,7 @@ test('best pair', t => {
   t.deepEqual(bestPair(ss('7s')), [0, 0, 0, 0], 'single');
   t.deepEqual(bestPair(ss('7s 8s 9s 10s')), [0, 0, 0, 0], 'no pair => 4 zeros');
   t.deepEqual(bestPair(ss('7s 8s 9s 10s Js Qs Ks')), [0, 0, 0, 0], 'tons of no pair still has 4 zeros');
+  t.deepEqual(bestPair(ss('Ac Ah Ad 7s 7c')), [14, 14, 7, 7], 'aces high');
   t.end();
 });
 

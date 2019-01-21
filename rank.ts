@@ -132,34 +132,53 @@ function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefin
   return all.map(rankToNum);
 }
 
-export function best4OfAKind(set: HandSet): number {
+export function best4OfAKind(set: HandSet): [number, number] {
   let all = allNOfAKind(set, 4);
-  return all.length === 0 ? 0 : bestRankAcesHigh(all);
+  let best = all.length === 0 ? 0 : bestRankAcesHigh(all);
+  let kicker = 0;
+  if (set.size > 4) {
+    let mutable =
+        removeAtMostN_vialoop(sortDescendingAcesHigh(Array.from(set, x => rankToNum(cardToRank(x)))), best, 4);
+    kicker = mutable[0] || 0;
+  }
+  return [best, kicker];
 }
 
 type RepeatMetadata = {
   universe?: number[],
   perRank?: Map<string, string[]>
 };
-export function best3OfAKind(
-    set: HandSet,
-    metadata: undefined|RepeatMetadata = undefined,
-    ): number {
+/**
+ * Returns a 3-array. The first element is the rank of the best triple found. The second two elements are kickers
+ * (highest other cards), used for tie-breaking. If triple or kickers can't be found, the appropriate elements are 0.
+ * @param set
+ * @param metadata
+ */
+export function best3OfAKind(set: HandSet, metadata: undefined|RepeatMetadata = undefined): [number, number, number] {
   let perRank = groupBy(set.values(), cardToRank);
   let quads = allNOfAKind(set, 4, perRank);
   let trips = allNOfAKind(set, 3, perRank);
   let tripUniverse = sortAscendingAcesHigh(quads.concat(trips));
-  if (tripUniverse.length === 0) { return 0; } // no trips
+  if (tripUniverse.length === 0) { return [0, 0, 0]; } // no trips
   if (metadata) {
     metadata.perRank = perRank;
     metadata.universe = tripUniverse;
   }
-  return tripUniverse[tripUniverse.length - 1];
+
+  let best = tripUniverse[tripUniverse.length - 1];
+  let kickers = [0, 0];
+  if (set.size > 3) {
+    let mutable =
+        removeAtMostN_vialoop(sortDescendingAcesHigh(Array.from(set, x => rankToNum(cardToRank(x)))), best, 3);
+    kickers[0] = mutable[0] || 0;
+    kickers[1] = mutable[1] || 0;
+  }
+  return [best, kickers[0], kickers[1]];
 }
 
 export function bestFullHouse(set: HandSet): [number, number] {
   let metadataTrip: RepeatMetadata = {};
-  let bestTrip = best3OfAKind(set, metadataTrip);
+  let bestTrip = best3OfAKind(set, metadataTrip)[0];
   if (bestTrip === 0) { return [0, 0]; }
   let pairs = allNOfAKind(set, 2, metadataTrip.perRank);
   let pairUniverse = sortAscendingAcesHigh((metadataTrip.universe || []).slice(0, -1).concat(pairs));
@@ -192,8 +211,9 @@ export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = un
   let lopair = pairUniverse[n - 2];
   let kicker = 0;
   if (set.size > 4) {
-    let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), highpair, 2);
-    mutable = sortDescendingAcesHigh(removeAtMostN_vialoop(mutable, lopair, 2));
+    let mutable =
+        removeAtMostN_vialoop(sortDescendingAcesHigh(Array.from(set, x => rankToNum(cardToRank(x)))), highpair, 2);
+    mutable = removeAtMostN_vialoop(mutable, lopair, 2);
     kicker = mutable[0];
   }
   return [highpair, lopair, kicker];
@@ -228,9 +248,8 @@ export function bestPair(set: HandSet): number[] {
   best2Pairs(set, metadata);
   if (metadata.universe && metadata.universe.length > 0) {
     let ret = metadata.universe[metadata.universe.length - 1];
-    let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), ret, 2);
-    let sorted = sortDescendingAcesHigh(mutable);
-    return [ret].concat(sorted.slice(0, 3));
+    let mutable = removeAtMostN_vialoop(sortDescendingAcesHigh(Array.from(set, x => rankToNum(cardToRank(x)))), ret, 2);
+    return [ret].concat(mutable.slice(0, 3));
   }
   return Array.from(Array(4), _ => 0);
 }
