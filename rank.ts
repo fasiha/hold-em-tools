@@ -116,11 +116,18 @@ export function bestStraightFlush(set: HandSet): number {
 }
 
 function nOfAKindHelper(set: HandSet): Map<string, Hand> { return groupBy(set.values(), cardToRank); }
-function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefined = undefined): number[] {
+function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefined = undefined,
+                     modulo: boolean = false): number[] {
   if (!perRank) { perRank = nOfAKindHelper(set); }
   let all: string[] = [];
   for (const [rank, hand] of perRank) {
-    if (hand.length === N) { all.push(rank); }
+    if (modulo) {
+      if (hand.length % N === 0) {
+        for (let i = 0; i < hand.length / N; i++) { all.push(rank); }
+      }
+    } else {
+      if (hand.length === N) { all.push(rank); }
+    }
   }
   return all.map(rankToNum);
 }
@@ -145,9 +152,9 @@ export function best3OfAKind(
   if (tripUniverse.length === 0) { return 0; } // no trips
   if (metadata) {
     metadata.perRank = perRank;
-    metadata.universe = tripUniverse; // pass by reference, so the pop below will be visible outside
+    metadata.universe = tripUniverse;
   }
-  return tripUniverse.pop() || 0; // TypeScript pacification
+  return tripUniverse[tripUniverse.length - 1];
 }
 
 export function bestFullHouse(set: HandSet): [number, number] {
@@ -155,7 +162,7 @@ export function bestFullHouse(set: HandSet): [number, number] {
   let bestTrip = best3OfAKind(set, metadataTrip);
   if (bestTrip === 0) { return [0, 0]; }
   let pairs = allNOfAKind(set, 2, metadataTrip.perRank);
-  let pairUniverse = sortAscendingAcesHigh((metadataTrip.universe || []).concat(pairs));
+  let pairUniverse = sortAscendingAcesHigh((metadataTrip.universe || []).slice(0, -1).concat(pairs));
   if (pairUniverse.length === 0) { return [0, 0]; } // no pairs
   let bestPair = pairUniverse.pop() || -1;
   return [bestTrip, bestPair];
@@ -165,22 +172,15 @@ export function bestFullHouse(set: HandSet): [number, number] {
  * Returns a 3-element array. First two elements are the ranks of each pair (higher first), then a kicker (highest
  * remaining card) for breaking ties. If no kicker is availble, zero is returned for the kicker. If two pairs can't be
  * made, three zeros are returned.
- *
- * This function is a little bit inconsistent. As with many other functions here, it sometimes ignores the other hand
- * formations if it's convenient. So for example, this function will parse a hand, "4 4 4 3 3", as a two-pair with 4 and
- * 3 and a kicker of 4, because that's the best two-pair possible here, ignoring the fact that this would be a
- * three-of-a-kind. However, for convenience's sake, it doesn't parse "4 4 4 4" (a four-of-a-kind) as two pairs: it
- * would rely on an earlier four-of-a-kind check to catch this; for the case of "4 4 4 4", this function returns three
- * zeros.
  * @param set
  * @param metadata
  */
 export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = undefined): [number, number, number] {
   let perRank = groupBy(set.values(), cardToRank);
-  let quads = allNOfAKind(set, 4, perRank);
+  // let quads = allNOfAKind(set, 4, perRank);
   let trips = allNOfAKind(set, 3, perRank);
-  let pairs = allNOfAKind(set, 2, perRank);
-  let pairUniverse = sortAscendingAcesHigh(quads.concat(trips).concat(pairs));
+  let pairs = allNOfAKind(set, 2, perRank, true);
+  let pairUniverse = sortAscendingAcesHigh(trips.concat(pairs));
   if (metadata) {
     metadata.perRank = perRank;
     metadata.universe = pairUniverse;
