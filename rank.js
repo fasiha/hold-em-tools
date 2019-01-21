@@ -111,7 +111,6 @@ function bestFlush(set) {
     return maxRanks.length === 0 ? 0 : bestRankAcesHigh(maxRanks);
 }
 exports.bestFlush = bestFlush;
-function isFlush(set) { return !!bestFlush(set); }
 function bestStraightFlush(set) {
     const perSuit = groupBySuit(set.values());
     let best = [];
@@ -126,7 +125,6 @@ function bestStraightFlush(set) {
     return best.length > 0 ? Math.max(...best) : 0;
 }
 exports.bestStraightFlush = bestStraightFlush;
-function isStraightFlush(set) { return !!bestStraightFlush(set); }
 function nOfAKindHelper(set) { return utils_1.groupBy(set.values(), cardToRank); }
 function allNOfAKind(set, N, perRank = undefined) {
     if (!perRank) {
@@ -140,11 +138,10 @@ function allNOfAKind(set, N, perRank = undefined) {
     }
     return all.map(rankToNum);
 }
-function bestNOfAKind(set, N) {
-    let all = allNOfAKind(set, N);
+function best4OfAKind(set) {
+    let all = allNOfAKind(set, 4);
     return all.length === 0 ? 0 : bestRankAcesHigh(all);
 }
-function best4OfAKind(set) { return bestNOfAKind(set, 4); }
 exports.best4OfAKind = best4OfAKind;
 function best3OfAKind(set, metadata = undefined) {
     let perRank = utils_1.groupBy(set.values(), cardToRank);
@@ -176,6 +173,20 @@ function bestFullHouse(set) {
     return [bestTrip, bestPair];
 }
 exports.bestFullHouse = bestFullHouse;
+/**
+ * Returns a 3-element array. First two elements are the ranks of each pair (higher first), then a kicker (highest
+ * remaining card) for breaking ties. If no kicker is availble, zero is returned for the kicker. If two pairs can't be
+ * made, three zeros are returned.
+ *
+ * This function is a little bit inconsistent. As with many other functions here, it sometimes ignores the other hand
+ * formations if it's convenient. So for example, this function will parse a hand, "4 4 4 3 3", as a two-pair with 4 and
+ * 3 and a kicker of 4, because that's the best two-pair possible here, ignoring the fact that this would be a
+ * three-of-a-kind. However, for convenience's sake, it doesn't parse "4 4 4 4" (a four-of-a-kind) as two pairs: it
+ * would rely on an earlier four-of-a-kind check to catch this; for the case of "4 4 4 4", this function returns three
+ * zeros.
+ * @param set
+ * @param metadata
+ */
 function best2Pairs(set, metadata = undefined) {
     let perRank = utils_1.groupBy(set.values(), cardToRank);
     let quads = allNOfAKind(set, 4, perRank);
@@ -187,15 +198,31 @@ function best2Pairs(set, metadata = undefined) {
         metadata.universe = pairUniverse;
     }
     if (pairUniverse.length < 2) {
-        return [0, 0];
+        return [0, 0, 0];
     }
     let n = pairUniverse.length;
-    // Don't mutate pairUniverse, let it be used fully outside
-    return [pairUniverse[n - 1], pairUniverse[n - 2]];
+    let highpair = pairUniverse[n - 1];
+    let lopair = pairUniverse[n - 2];
+    let kicker = 0;
+    if (set.size > 4) {
+        let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), highpair, 2);
+        mutable = sortDescendingAcesHigh(removeAtMostN_vialoop(mutable, lopair, 2));
+        kicker = mutable[0];
+    }
+    return [highpair, lopair, kicker];
 }
 exports.best2Pairs = best2Pairs;
-function removeAtMostN_viamaps(arr, elt, atmost) {
-    let map = utils_1.groupBy(arr, x => x);
+function removeAtMostN_viamaps(arr, elt, atmost, cache) {
+    let map;
+    if (cache && cache.map) {
+        map = cache.map;
+    }
+    else {
+        map = utils_1.groupBy(arr, x => x);
+        if (cache) {
+            cache.map = map;
+        }
+    }
     map.set(elt, (map.get(elt) || []).slice(atmost));
     return [].concat(...map.values());
 }

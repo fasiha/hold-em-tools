@@ -102,7 +102,6 @@ export function bestFlush(set: HandSet): number {
   }
   return maxRanks.length === 0 ? 0 : bestRankAcesHigh(maxRanks);
 }
-function isFlush(set: HandSet): boolean { return !!bestFlush(set); }
 
 export function bestStraightFlush(set: HandSet): number {
   const perSuit = groupBySuit(set.values());
@@ -115,7 +114,6 @@ export function bestStraightFlush(set: HandSet): number {
   }
   return best.length > 0 ? Math.max(...best) : 0;
 }
-function isStraightFlush(set: HandSet): boolean { return !!bestStraightFlush(set); }
 
 function nOfAKindHelper(set: HandSet): Map<string, Hand> { return groupBy(set.values(), cardToRank); }
 function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefined = undefined): number[] {
@@ -126,11 +124,11 @@ function allNOfAKind(set: HandSet, N: number, perRank: Map<string, Hand>|undefin
   }
   return all.map(rankToNum);
 }
-function bestNOfAKind(set: HandSet, N: number): number {
-  let all = allNOfAKind(set, N);
+
+export function best4OfAKind(set: HandSet): number {
+  let all = allNOfAKind(set, 4);
   return all.length === 0 ? 0 : bestRankAcesHigh(all);
 }
-export function best4OfAKind(set: HandSet): number { return bestNOfAKind(set, 4); }
 
 type RepeatMetadata = {
   universe?: number[],
@@ -163,7 +161,21 @@ export function bestFullHouse(set: HandSet): [number, number] {
   return [bestTrip, bestPair];
 }
 
-export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = undefined): [number, number] {
+/**
+ * Returns a 3-element array. First two elements are the ranks of each pair (higher first), then a kicker (highest
+ * remaining card) for breaking ties. If no kicker is availble, zero is returned for the kicker. If two pairs can't be
+ * made, three zeros are returned.
+ *
+ * This function is a little bit inconsistent. As with many other functions here, it sometimes ignores the other hand
+ * formations if it's convenient. So for example, this function will parse a hand, "4 4 4 3 3", as a two-pair with 4 and
+ * 3 and a kicker of 4, because that's the best two-pair possible here, ignoring the fact that this would be a
+ * three-of-a-kind. However, for convenience's sake, it doesn't parse "4 4 4 4" (a four-of-a-kind) as two pairs: it
+ * would rely on an earlier four-of-a-kind check to catch this; for the case of "4 4 4 4", this function returns three
+ * zeros.
+ * @param set
+ * @param metadata
+ */
+export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = undefined): [number, number, number] {
   let perRank = groupBy(set.values(), cardToRank);
   let quads = allNOfAKind(set, 4, perRank);
   let trips = allNOfAKind(set, 3, perRank);
@@ -173,14 +185,28 @@ export function best2Pairs(set: HandSet, metadata: RepeatMetadata|undefined = un
     metadata.perRank = perRank;
     metadata.universe = pairUniverse;
   }
-  if (pairUniverse.length < 2) { return [0, 0]; }
+  if (pairUniverse.length < 2) { return [0, 0, 0]; }
+
   let n = pairUniverse.length;
-  // Don't mutate pairUniverse, let it be used fully outside
-  return [pairUniverse[n - 1], pairUniverse[n - 2]];
+  let highpair = pairUniverse[n - 1];
+  let lopair = pairUniverse[n - 2];
+  let kicker = 0;
+  if (set.size > 4) {
+    let mutable = removeAtMostN_vialoop(Array.from(set, x => rankToNum(cardToRank(x))), highpair, 2);
+    mutable = sortDescendingAcesHigh(removeAtMostN_vialoop(mutable, lopair, 2));
+    kicker = mutable[0];
+  }
+  return [highpair, lopair, kicker];
 }
 
-function removeAtMostN_viamaps<T>(arr: T[], elt: T, atmost: number): T[] {
-  let map = groupBy(arr, x => x);
+function removeAtMostN_viamaps<T>(arr: T[], elt: T, atmost: number, cache?: {map: Map<T, T[]>}): T[] {
+  let map: Map<T, T[]>;
+  if (cache && cache.map) {
+    map = cache.map;
+  } else {
+    map = groupBy(arr, x => x);
+    if (cache) { cache.map = map; }
+  }
   map.set(elt, (map.get(elt) || []).slice(atmost));
   return ([] as T[]).concat(...map.values());
 }
