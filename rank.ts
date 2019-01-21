@@ -1,5 +1,5 @@
 import {groupBy, isSuperset, reservoirSample} from './utils';
-var shuffle = require('shuffle-array');
+var shuffle = require('knuth-shuffle-seeded');
 
 type Hand = string[];
 type HandSet = Set<string>;
@@ -44,7 +44,7 @@ function makeAllRanks(): string[] {
     Ace, Jack, Queen, King
   ]);
 }
-function makeSuitToCardsMap(): Map<string, Hand> {
+export function makeSuitToCardsMap(): Map<string, Hand> {
   return new Map(SUITS.map(s => [s, ALLRANKS.map(n => mergeNumberSuit(n, s))] as [string, string[]]));
 }
 function makeAllCardsSet() {
@@ -190,17 +190,73 @@ export function bestHighCard(set: HandSet): number[] {
   return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
 }
 
-export function value(hand: Hand): string {
+type ScoreFunc =
+    (((handSet: Set<string>) => boolean)|((set: Set<string>, metadata?: RepeatMetadata|undefined) => number)|
+     ((set: Set<string>, metadata?: RepeatMetadata|undefined) => number[])|((set: Set<string>) => number[]));
+const scorefnName = [
+  [isRoyalFlush, 'royal flush'],
+  [bestStraightFlush, 'straight flush'],
+  [best4OfAKind, 'four of a kind'],
+  [bestFullHouse, 'full house'],
+  [bestFlush, 'flush'],
+  [bestStraight, 'straight'],
+  [best3OfAKind, 'three of a kind'],
+  [best2Pairs, 'two pairs'],
+  [bestPair, 'pair'],
+  [bestHighCard, 'high card'],
+] as [ScoreFunc, string][];
+
+type ReturnValue = number|number[]|boolean;
+export function score(hand: Hand): {score: number, output: ReturnValue} {
   let set = new Set(hand);
-  if (isRoyalFlush(set)) {
-    return 'rf';
-  } else if (true) {
+  let output: ReturnValue = 0 as ReturnValue; // TypeScript pacification: without initializing, can't output `ret`
+  let score = scorefnName.map(([f, _]) => f).findIndex(fn => {
+    output = fn(set);
+    return (output instanceof Array ? output[0] : output) > 0;
+  });
+  if (score === -1) { throw new Error('empty deck?') }
+  return {score, output};
+}
+/**
+ * Compares two hands. Returns the notional version of "hand A minus hand B". If the return value is negative, then "A
+ * is stronger than B", whereas if it is positive, then "A is weaker than B". Finally, if the return value is zero, then
+ * "A is the same strength as B".
+ * @param a
+ * @param b
+ */
+export function compareHands(a: Hand, b: Hand): number {
+  let {score: ascore, output: aout} = score(a);
+  let {score: bscore, output: bout} = score(b);
+  if (ascore !== bscore) { return ascore - bscore; }
+  // tie-breakers
+  if (typeof aout === 'boolean' && typeof bout === 'boolean') {
+    return 0;
+  } else if (typeof aout === 'number' && typeof bout === 'number') {
+    return bout - aout;
+  } else if (aout instanceof Array && bout instanceof Array) {
+    if (aout.length !== bout.length) { throw new Error('cannot compare hands of unequal size'); }
+    let ret = aout.findIndex((a, i) => (bout as number[])[i] !== a);
+    if (ret === -1) { return 0; }
+    return bout[ret] - aout[ret];
   }
-  return '';
+  throw new Error('could not compare hands');
 }
 
-export function deal(n: number): Hand[] { return shuffle(reservoirSample(fullDeck.values(), n)); }
+export function dealRoundNoFolding(nplayers: number, seed?: number) {
+  if (fullDeck.size !== 52) { throw new Error('what kinda deck is this?'); }
+  let deck: Hand = shuffle([...fullDeck.values()], seed);
+  let pockets = Array.from(Array(nplayers), _ => deck.splice(0, 2));
+  let community = deck.splice(0, 5);
+  let hands: {player: number, hand: Hand}[] = pockets.map((pocket, i) => ({player: i, hand: pocket.concat(community)}));
+  hands.sort((a, b) => compareHands(a.hand, b.hand));
+  let detailed =
+      hands.map(h => Object.assign(h, score(h.hand))).map(h => Object.assign(h, {readable: scorefnName[h.score][1]}));
+  return {pockets, community, hands, detailed};
+}
 
-// console.log(deal(5));
-// console.log(deal(5));
-// console.log(deal(5));
+if (require.main === module) {
+  let {pockets, community, detailed} = dealRoundNoFolding(4);
+  console.log('pockets\n', pockets)
+  console.log('community\n', community);
+  console.log('detailed\n', detailed);
+}

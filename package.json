@@ -11,7 +11,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^10.12.18",
-    "shuffle-array": "^1.0.1",
+    "knuth-shuffle-seeded": "^1.0.6",
     "tape": "^4.9.2",
     "typescript": "^3.2.4"
   }

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
-var shuffle = require('shuffle-array');
+var shuffle = require('knuth-shuffle-seeded');
 const SUITS = 's,c,h,d'.split(',');
 const SUITSSET = new Set(SUITS);
 // const SUITS = '♠︎,♣︎,♥︎,♦︎'.split(',');
@@ -49,6 +49,7 @@ function makeAllRanks() {
 function makeSuitToCardsMap() {
     return new Map(SUITS.map(s => [s, ALLRANKS.map(n => mergeNumberSuit(n, s))]));
 }
+exports.makeSuitToCardsMap = makeSuitToCardsMap;
 function makeAllCardsSet() {
     let suitToCards = makeSuitToCardsMap();
     let fullDeck = new Set([].concat(...suitToCards.values()));
@@ -208,18 +209,80 @@ function bestHighCard(set) {
     return sortDescendingAcesHigh(Array.from(set.values(), c => rankToNum(cardToRank(c))));
 }
 exports.bestHighCard = bestHighCard;
-function value(hand) {
+const scorefnName = [
+    [isRoyalFlush, 'royal flush'],
+    [bestStraightFlush, 'straight flush'],
+    [best4OfAKind, 'four of a kind'],
+    [bestFullHouse, 'full house'],
+    [bestFlush, 'flush'],
+    [bestStraight, 'straight'],
+    [best3OfAKind, 'three of a kind'],
+    [best2Pairs, 'two pairs'],
+    [bestPair, 'pair'],
+    [bestHighCard, 'high card'],
+];
+function score(hand) {
     let set = new Set(hand);
-    if (isRoyalFlush(set)) {
-        return 'rf';
+    let output = 0; // TypeScript pacification: without initializing, can't output `ret`
+    let score = scorefnName.map(([f, _]) => f).findIndex(fn => {
+        output = fn(set);
+        return (output instanceof Array ? output[0] : output) > 0;
+    });
+    if (score === -1) {
+        throw new Error('empty deck?');
     }
-    else if (true) {
-    }
-    return '';
+    return { score, output };
 }
-exports.value = value;
-function deal(n) { return shuffle(utils_1.reservoirSample(fullDeck.values(), n)); }
-exports.deal = deal;
-// console.log(deal(5));
-// console.log(deal(5));
-// console.log(deal(5));
+exports.score = score;
+/**
+ * Compares two hands. Returns the notional version of "hand A minus hand B". If the return value is negative, then "A
+ * is stronger than B", whereas if it is positive, then "A is weaker than B". Finally, if the return value is zero, then
+ * "A is the same strength as B".
+ * @param a
+ * @param b
+ */
+function compareHands(a, b) {
+    let { score: ascore, output: aout } = score(a);
+    let { score: bscore, output: bout } = score(b);
+    if (ascore !== bscore) {
+        return ascore - bscore;
+    }
+    // tie-breakers
+    if (typeof aout === 'boolean' && typeof bout === 'boolean') {
+        return 0;
+    }
+    else if (typeof aout === 'number' && typeof bout === 'number') {
+        return bout - aout;
+    }
+    else if (aout instanceof Array && bout instanceof Array) {
+        if (aout.length !== bout.length) {
+            throw new Error('cannot compare hands of unequal size');
+        }
+        let ret = aout.findIndex((a, i) => bout[i] !== a);
+        if (ret === -1) {
+            return 0;
+        }
+        return bout[ret] - aout[ret];
+    }
+    throw new Error('could not compare hands');
+}
+exports.compareHands = compareHands;
+function dealRoundNoFolding(nplayers, seed) {
+    if (fullDeck.size !== 52) {
+        throw new Error('what kinda deck is this?');
+    }
+    let deck = shuffle([...fullDeck.values()], seed);
+    let pockets = Array.from(Array(nplayers), _ => deck.splice(0, 2));
+    let community = deck.splice(0, 5);
+    let hands = pockets.map((pocket, i) => ({ player: i, hand: pocket.concat(community) }));
+    hands.sort((a, b) => compareHands(a.hand, b.hand));
+    let detailed = hands.map(h => Object.assign(h, score(h.hand))).map(h => Object.assign(h, { readable: scorefnName[h.score][1] }));
+    return { pockets, community, hands, detailed };
+}
+exports.dealRoundNoFolding = dealRoundNoFolding;
+if (require.main === module) {
+    let { pockets, community, detailed } = dealRoundNoFolding(4);
+    console.log('pockets\n', pockets);
+    console.log('community\n', community);
+    console.log('detailed\n', detailed);
+}
