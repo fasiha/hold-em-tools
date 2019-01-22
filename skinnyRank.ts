@@ -24,6 +24,9 @@ function shortToNumber(short: string): number {
 }
 // (0 to 12) || 13 means aces get mapped to 13.
 function shortToNumberAcesHigh(short: string): number { return shortToNumber(short) || 13; }
+function shortsToBestNumberAcesHigh(shorts: string): number {
+  return Math.max(...shorts.split('').map(shortToNumberAcesHigh));
+}
 function shortToRank(short: string) { return ranks[shortToNumber(short)]; }
 function shortToSuit(short: string): string {
   return ((short < 'N') && 'c') || ((short <= 'Z') && 'd') || ((short < 'n') && 'h') || 's';
@@ -85,8 +88,30 @@ function bestStraightFlush(hand: Hand): number {
   return 0;
 }
 // 3: four of a kind
+function removeCards(hand: Hand, remove: Hand): Hand { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
 function best4OfAKind(hand: Hand): [number, number] {
   if (hand.length < 4) { return [0, 0]; }
+  let quadsFound: string[] = [];
+  const shortToFriends = (short: string) => {
+    let rank = shortToNumber(short);
+    return [shorts[rank + 13], shorts[rank + 13 * 2], shorts[rank + 13 * 3]];
+  };
+  for (let i = 0; i < hand.length; i++) {
+    let short = hand[i];
+    if (short < 'N') { break; }
+    let friends = shortToFriends(short);
+    let start = i + 1;
+    for (let fi = 0; fi < friends.length && start >= 0; fi++) { start = hand.indexOf(friends[fi], start); }
+    if (start < 0) { continue; }
+    quadsFound.push(short);
+  }
+  if (quadsFound.length > 0) {
+    let best = Math.max(...quadsFound.map(shortToNumberAcesHigh));
+    if (hand.length === 4) { return [best, 0]; }
+    let bestShort = shorts[best < 13 ? best : 0];
+    let kicker = shortsToBestNumberAcesHigh(removeCards(hand, bestShort + shortToFriends(bestShort)));
+    return [best, kicker];
+  }
   return [0, 0];
 }
 
