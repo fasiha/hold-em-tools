@@ -1,5 +1,6 @@
 const test = require('tape');
-const {readableToShort, validateShort, isRoyalFlush, bestStraightFlush, best4OfAKind} = require('./skinnyRank');
+const {readableToShort, validateShort, isRoyalFlush, bestStraightFlush, best4OfAKind, best3OfAKind} =
+    require('./skinnyRank');
 
 var parseRank = s => {
   let res = parseInt(s.replace('A', '1'));
@@ -30,6 +31,7 @@ test('royal flush', t => {
 
   t.end();
 });
+
 test('bestStraightFlush', t => {
   t.equal(bestStraightFlush(ss('3c 4c 5c 6c 7c')), 7);
   t.equal(bestStraightFlush(ss('Ac 2c 3c 4c 5c')), 5, 'aces low');
@@ -48,5 +50,24 @@ test('4 of a kind', t => {
   t.deepEqual(best4OfAKind(ss('3c 3d 3s')), [0, 0], '3 doesn\'t cut it');
   t.deepEqual(best4OfAKind(ss('3c 3d')), [0, 0], '2 doesn\'t cut it');
   t.deepEqual(best4OfAKind(ss('3c')), [0, 0], '1 doesn\'t cut it');
+  t.end();
+});
+
+test('3 of a kind', t => {
+  console.log(best3OfAKind(ss('Ac Ah Ad 7s 7c')), [14, 7, 7], 'aces high');
+  console.log(best3OfAKind(ss('Kc Kh Kd 7s 7c')), [13, 7, 7]);
+  console.log(best3OfAKind(ss('Kc Kh Kd 7s 7c 7c')), [13, 7, 7], 'two trips ok');
+  console.log(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 13, 7], 'quads and trips ok');
+  console.log(best3OfAKind(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 13, 7], 'quads and quads ok');
+  console.log(best3OfAKind(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 13, 7], 'quads quads high-pairs get pairs');
+  console.log(best3OfAKind(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2, 2], 'low quad and high trips means trip');
+  console.log(best3OfAKind(ss('2c 2h 2d 2s 7s 7c')), [2, 7, 7], 'low quad and high pairs means low');
+  console.log(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [4, 7, 7], 'many quads and high pair');
+  console.log(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6, 6],
+              'quads can be ignored');
+  console.log(best3OfAKind(ss('Kc Kh 7s 7c')), [0, 0, 0], 'not full house');
+  console.log(best3OfAKind(ss('Kc 7s 7d 7h')), [7, 13, 0], 'trip but no pair');
+  console.log(best3OfAKind(ss('7s 7d 7h')), [7, 0, 0], 'trip and nothing else');
+  console.log(best3OfAKind(ss('7s 7d')), [0, 0, 0], 'pair and nothing else');
   t.end();
 });

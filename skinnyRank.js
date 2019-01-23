@@ -25,9 +25,10 @@ function shortToNumber(short) {
 }
 // (0 to 12) || 13 means aces get mapped to 13.
 function shortToNumberAcesHigh(short) { return (shortToNumber(short) || 13) + 1; }
-function shortsToBestNumberAcesHigh(shorts) {
-    return Math.max(...shorts.split('').map(shortToNumberAcesHigh));
+function shortsToBestNumberAcesHigh2(shorts) {
+    return Math.max(...shorts.map(shortToNumberAcesHigh));
 }
+function shortsToBestNumberAcesHigh(shorts) { return shortsToBestNumberAcesHigh2(shorts.split('')); }
 function numberAcesHighToNumber(n) { return n === 14 ? 0 : n - 1; }
 function shortToRank(short) { return ranks[shortToNumber(short)]; }
 function shortToSuit(short) {
@@ -132,7 +133,7 @@ function best4OfAKind(hand) {
         quadsFound.push(short);
     }
     if (quadsFound.length > 0) {
-        let best = Math.max(...quadsFound.map(shortToNumberAcesHigh));
+        let best = shortsToBestNumberAcesHigh2(quadsFound);
         if (hand.length === 4) {
             return [best, 0];
         }
@@ -143,7 +144,42 @@ function best4OfAKind(hand) {
     return [0, 0];
 }
 exports.best4OfAKind = best4OfAKind;
-// 4: full house
+// 4: full house. First implement 3-of-a-kind and best-pair
+function handToSubSuits(hand) {
+    let ret = [[], [], [], []];
+    let maxChars = 'MZmz';
+    let idx = 0;
+    for (let c of hand) {
+        if (c <= maxChars[idx]) {
+            ret[idx].push(c);
+        }
+        else {
+            ret[++idx].push(c);
+        }
+    }
+    return ret;
+}
+function best3OfAKind(hand) {
+    let perSuit = handToSubSuits(hand);
+    let tripsFound = [];
+    for (let suitIdx = 0; suitIdx < 2; suitIdx++) {
+        for (let card of perSuit[suitIdx]) {
+            let rank = shortToNumber(card);
+            let hits = 1;
+            for (let friendIdx = suitIdx + 1; friendIdx < 4; friendIdx++) {
+                let friend = shorts[13 * friendIdx + rank];
+                if (perSuit[friendIdx].indexOf(friend) >= 0 && (++hits) >= 3) {
+                    break;
+                }
+            }
+            if (hits >= 3) {
+                tripsFound.push(card);
+            }
+        }
+    }
+    return tripsFound.map(shortToNumberAcesHigh);
+}
+exports.best3OfAKind = best3OfAKind;
 function bestFullHouse(hand) {
     1;
     return 0;
