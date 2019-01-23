@@ -23,17 +23,18 @@ function shortToNumber(short: string): number {
   return (short.charCodeAt(0) - (uppercase ? upACode : loACode)) % 13;
 }
 // (0 to 12) || 13 means aces get mapped to 13.
-function shortToNumberAcesHigh(short: string): number { return shortToNumber(short) || 13; }
+function shortToNumberAcesHigh(short: string): number { return (shortToNumber(short) || 13) + 1; }
 function shortsToBestNumberAcesHigh(shorts: string): number {
   return Math.max(...shorts.split('').map(shortToNumberAcesHigh));
 }
+function numberAcesHighToNumber(n: number): number { return n === 14 ? 0 : n - 1; }
 function shortToRank(short: string) { return ranks[shortToNumber(short)]; }
 function shortToSuit(short: string): string {
   return ((short < 'N') && 'c') || ((short <= 'Z') && 'd') || ((short < 'n') && 'h') || 's';
 }
-function validateShort(short: string): boolean { return /^[a-zA-Z]$/.test(short); }
+export function validateShort(short: string): boolean { return /^[a-zA-Z]$/.test(short); }
 // Not intended for speed!
-function readableToShort(rank: string, suit: string): string {
+export function readableToShort(rank: string, suit: string): string {
   let rankIdx = ranks.indexOf(rank);
   let suitIdx = suits.indexOf(suit);
   if (rankIdx === -1 || suitIdx === -1) { throw new Error('bad readable: ' + [[rank, rankIdx], [suit, suitIdx]]); }
@@ -62,7 +63,7 @@ function initHands(verbose: boolean = false) {
 const {straightFlushes} = initHands();
 type Hand = string;
 // 1: royal flushes
-function isRoyalFlush(hand: Hand): number {
+export function isRoyalFlush(hand: Hand): number {
   if (hand.length < 5) { return 0; }
   return ((hand.startsWith('a') && hand.includes('jklm')) || (hand.includes('JKLM') && hand.includes('A')) ||
           (hand.includes('wxyz') && hand.includes('n')) || (hand.endsWith('WXYZ') && hand.includes('N')))
@@ -70,12 +71,12 @@ function isRoyalFlush(hand: Hand): number {
              : 0;
 }
 // 2: straight flushes
-function bestStraightFlush(hand: Hand): number {
+export function bestStraightFlush(hand: Hand): number {
   if (hand.length < 5) { return 0; }
   let straightFlushesFound: string[] = [];
   let nhits = 0;
   let prevCharCode = hand.charCodeAt(0);
-  for (let i = 1; i < hand.length - 5; i++) {
+  for (let i = 1; i < hand.length; i++) {
     let newCharCode = hand.charCodeAt(i);
     if (prevCharCode + 1 === newCharCode) {
       if ((++nhits) >= 4 && (shortToSuit(hand[i]) === shortToSuit(hand[i - 4]))) { straightFlushesFound.push(hand[i]); }
@@ -89,7 +90,7 @@ function bestStraightFlush(hand: Hand): number {
 }
 // 3: four of a kind
 function removeCards(hand: Hand, remove: Hand): Hand { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
-function best4OfAKind(hand: Hand): [number, number] {
+export function best4OfAKind(hand: Hand): [number, number] {
   if (hand.length < 4) { return [0, 0]; }
   let quadsFound: string[] = [];
   const shortToFriends = (short: string) => {
@@ -98,7 +99,7 @@ function best4OfAKind(hand: Hand): [number, number] {
   };
   for (let i = 0; i < hand.length; i++) {
     let short = hand[i];
-    if (short < 'N') { break; }
+    if (short >= 'N') { break; }
     let friends = shortToFriends(short);
     let start = i + 1;
     for (let fi = 0; fi < friends.length && start >= 0; fi++) { start = hand.indexOf(friends[fi], start); }
@@ -108,11 +109,17 @@ function best4OfAKind(hand: Hand): [number, number] {
   if (quadsFound.length > 0) {
     let best = Math.max(...quadsFound.map(shortToNumberAcesHigh));
     if (hand.length === 4) { return [best, 0]; }
-    let bestShort = shorts[best < 13 ? best : 0];
+    let bestShort = shorts[numberAcesHighToNumber(best)];
     let kicker = shortsToBestNumberAcesHigh(removeCards(hand, bestShort + shortToFriends(bestShort)));
     return [best, kicker];
   }
   return [0, 0];
+}
+// 4: full house
+function bestFullHouse(hand: Hand): number {
+  1;
+
+  return 0;
 }
 
 if (require.main === module) {

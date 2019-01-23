@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function initCards() {
     const shorts = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
     const ranks = '0123456789JQK'.split('');
@@ -23,15 +24,17 @@ function shortToNumber(short) {
     return (short.charCodeAt(0) - (uppercase ? upACode : loACode)) % 13;
 }
 // (0 to 12) || 13 means aces get mapped to 13.
-function shortToNumberAcesHigh(short) { return shortToNumber(short) || 13; }
+function shortToNumberAcesHigh(short) { return (shortToNumber(short) || 13) + 1; }
 function shortsToBestNumberAcesHigh(shorts) {
     return Math.max(...shorts.split('').map(shortToNumberAcesHigh));
 }
+function numberAcesHighToNumber(n) { return n === 14 ? 0 : n - 1; }
 function shortToRank(short) { return ranks[shortToNumber(short)]; }
 function shortToSuit(short) {
     return ((short < 'N') && 'c') || ((short <= 'Z') && 'd') || ((short < 'n') && 'h') || 's';
 }
 function validateShort(short) { return /^[a-zA-Z]$/.test(short); }
+exports.validateShort = validateShort;
 // Not intended for speed!
 function readableToShort(rank, suit) {
     let rankIdx = ranks.indexOf(rank);
@@ -41,6 +44,7 @@ function readableToShort(rank, suit) {
     }
     return shorts[suitIdx * 13 + rankIdx];
 }
+exports.readableToShort = readableToShort;
 function sortString(s) { return s.split('').sort().join(''); }
 function range(n) { return Array.from(Array(n), (_, n) => n); }
 function flatten(arr) { return [].concat(...arr); }
@@ -74,6 +78,7 @@ function isRoyalFlush(hand) {
         ? 1
         : 0;
 }
+exports.isRoyalFlush = isRoyalFlush;
 // 2: straight flushes
 function bestStraightFlush(hand) {
     if (hand.length < 5) {
@@ -82,7 +87,7 @@ function bestStraightFlush(hand) {
     let straightFlushesFound = [];
     let nhits = 0;
     let prevCharCode = hand.charCodeAt(0);
-    for (let i = 1; i < hand.length - 5; i++) {
+    for (let i = 1; i < hand.length; i++) {
         let newCharCode = hand.charCodeAt(i);
         if (prevCharCode + 1 === newCharCode) {
             if ((++nhits) >= 4 && (shortToSuit(hand[i]) === shortToSuit(hand[i - 4]))) {
@@ -99,6 +104,7 @@ function bestStraightFlush(hand) {
     }
     return 0;
 }
+exports.bestStraightFlush = bestStraightFlush;
 // 3: four of a kind
 function removeCards(hand, remove) { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
 function best4OfAKind(hand) {
@@ -112,7 +118,7 @@ function best4OfAKind(hand) {
     };
     for (let i = 0; i < hand.length; i++) {
         let short = hand[i];
-        if (short < 'N') {
+        if (short >= 'N') {
             break;
         }
         let friends = shortToFriends(short);
@@ -130,11 +136,17 @@ function best4OfAKind(hand) {
         if (hand.length === 4) {
             return [best, 0];
         }
-        let bestShort = shorts[best < 13 ? best : 0];
+        let bestShort = shorts[numberAcesHighToNumber(best)];
         let kicker = shortsToBestNumberAcesHigh(removeCards(hand, bestShort + shortToFriends(bestShort)));
         return [best, kicker];
     }
     return [0, 0];
+}
+exports.best4OfAKind = best4OfAKind;
+// 4: full house
+function bestFullHouse(hand) {
+    1;
+    return 0;
 }
 if (require.main === module) {
     console.log(initCards());
