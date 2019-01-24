@@ -66,8 +66,8 @@ test('3 of a kind', t => {
   t.deepEqual(best3OfAKind(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6, 6],
               'quads can be ignored');
   t.deepEqual(best3OfAKind(ss('Kc Kh 7s 7c')), [0, 0, 0], 'not full house');
-  // t.deepEqual(best3OfAKind(ss('Kc 7s 7d 7h')), [7, 13, 0], 'trip but no pair');
-  // t.deepEqual(best3OfAKind(ss('7s 7d 7h')), [7, 0, 0], 'trip and nothing else');
+  t.deepEqual(best3OfAKind(ss('Kc 7s 7d 7h')), [7, 13, 0], 'trip but no pair');
+  t.deepEqual(best3OfAKind(ss('7s 7d 7h')), [7, 0, 0], 'trip and nothing else');
   t.deepEqual(best3OfAKind(ss('7s 7d')), [0, 0, 0], 'pair and nothing else');
   t.end();
 });

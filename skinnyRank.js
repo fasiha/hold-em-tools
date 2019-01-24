@@ -128,17 +128,12 @@ function bestNOfAKind(hand, N) {
     if (hitsFound.length > 0) {
         let best = shortsToBestNumberAcesHighArr(hitsFound);
         if (hand.length === N) {
-            return [best, 0];
+            return [best].concat(Array.from(Array(kickersNeeded), _ => 0));
         }
         let bestNumber = numberAcesHighToNumber(best);
         let kickers = [];
-        if (0 !== bestNumber && cardsPerRank[0] > 0) {
-            let kicker = numberToNumberAcesHigh(0);
-            for (let copy = cardsPerRank[0]; copy > 0 && kickers.length < kickersNeeded; copy--) {
-                kickers.push(kicker);
-            }
-        }
-        for (let i = 12; i > 0 && kickers.length < kickersNeeded; i--) {
+        for (let j = 13; j > 0 && kickers.length < kickersNeeded; j--) {
+            const i = j % 13; // map 13->0 (i.e., look at aces first) but leave the rest alone.
             if (i !== bestNumber && cardsPerRank[i] > 0) {
                 let kicker = numberToNumberAcesHigh(i);
                 for (let copy = cardsPerRank[i]; copy > 0 && kickers.length < kickersNeeded; copy--) {
@@ -146,7 +141,7 @@ function bestNOfAKind(hand, N) {
                 }
             }
         }
-        return [best].concat(kickers);
+        return [best].concat(kickers).concat(Array.from(Array(kickersNeeded - kickers.length), _ => 0));
     }
     return Array.from(Array(kickersNeeded + 1), _ => 0);
 }
