@@ -23,13 +23,17 @@ function shortToNumber(short) {
     let uppercase = short < 'a';
     return (short.charCodeAt(0) - (uppercase ? upACode : loACode)) % 13;
 }
+const ACEHIRANK = 13;
 // (0 to 12) || 13 means aces get mapped to 13.
-function shortToNumberAcesHigh(short) { return (shortToNumber(short) || 13) + 1; }
-function shortsToBestNumberAcesHigh2(shorts) {
+function numberToNumberAcesHigh(rank) { return (rank || ACEHIRANK) + 1; }
+function shortToNumberAcesHigh(short) { return numberToNumberAcesHigh(shortToNumber(short)); }
+function shortsToBestNumberAcesHighArr(shorts) {
     return Math.max(...shorts.map(shortToNumberAcesHigh));
 }
-function shortsToBestNumberAcesHigh(shorts) { return shortsToBestNumberAcesHigh2(shorts.split('')); }
-function numberAcesHighToNumber(n) { return n === 14 ? 0 : n - 1; }
+function shortsToBestNumberAcesHighStr(shorts) {
+    return shortsToBestNumberAcesHighArr(shorts.split(''));
+}
+function numberAcesHighToNumber(n) { return n === (ACEHIRANK + 1) ? 0 : n - 1; }
 function shortToRank(short) { return ranks[shortToNumber(short)]; }
 function shortToSuit(short) {
     return ((short < 'N') && 'c') || ((short <= 'Z') && 'd') || ((short < 'n') && 'h') || 's';
@@ -112,33 +116,27 @@ function best4OfAKind(hand) {
     if (hand.length < 4) {
         return [0, 0];
     }
+    let cardsPerRank = Array.from(Array(13), _ => 0);
     let quadsFound = [];
-    const shortToFriends = (short) => {
-        let rank = shortToNumber(short);
-        return [shorts[rank + 13], shorts[rank + 13 * 2], shorts[rank + 13 * 3]];
-    };
-    for (let i = 0; i < hand.length; i++) {
-        let short = hand[i];
-        if (short >= 'N') {
-            break;
+    for (let short of hand) {
+        const n = ++cardsPerRank[shortToNumber(short)];
+        if (n === 4) {
+            quadsFound.push(short);
         }
-        let friends = shortToFriends(short);
-        let start = i + 1;
-        for (let fi = 0; fi < friends.length && start >= 0; fi++) {
-            start = hand.indexOf(friends[fi], start);
-        }
-        if (start < 0) {
-            continue;
-        }
-        quadsFound.push(short);
     }
     if (quadsFound.length > 0) {
-        let best = shortsToBestNumberAcesHigh2(quadsFound);
+        let best = shortsToBestNumberAcesHighArr(quadsFound);
         if (hand.length === 4) {
             return [best, 0];
         }
-        let bestShort = shorts[numberAcesHighToNumber(best)];
-        let kicker = shortsToBestNumberAcesHigh(removeCards(hand, bestShort + shortToFriends(bestShort)));
+        let bestNumber = numberAcesHighToNumber(best);
+        let kicker = 0;
+        for (let i = 12; i >= 0; i--) {
+            if (i !== bestNumber && cardsPerRank[i] > 0) {
+                kicker = numberToNumberAcesHigh(i);
+                break;
+            }
+        }
         return [best, kicker];
     }
     return [0, 0];
