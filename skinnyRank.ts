@@ -118,14 +118,17 @@ export function best4OfAKind(hand: Hand): [number, number] {
 }
 // 4: full house. First implement 3-of-a-kind and best-pair
 function handToSubSuits(hand: Hand) {
-  let ret: string[][] = [[], [], [], []];
-  let maxChars = 'MZmz';
-  let idx = 0;
-  for (let c of hand) {
-    if (c <= maxChars[idx]) {
-      ret[idx].push(c);
-    } else {
-      ret[++idx].push(c);
+  let ret: string[] = [];
+  let curr = 0;
+  let start = 0;
+  for (let max of 'MZmz') {
+    for (let i = start; i <= hand.length; i++) {
+      if (hand[i] > max || i === hand.length) {
+        ret.push(hand.substring(start, curr));
+        start = curr;
+        break;
+      }
+      curr++;
     }
   }
   return ret;

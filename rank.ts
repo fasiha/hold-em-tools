@@ -227,8 +227,11 @@ function removeAtMostN_viamaps<T>(arr: T[], elt: T, atmost: number, cache?: {map
     map = groupBy(arr, x => x);
     if (cache) { cache.map = map; }
   }
-  map.set(elt, (map.get(elt) || []).slice(atmost));
-  return ([] as T[]).concat(...map.values());
+  if (map.has(elt)) {
+    map.set(elt, (map.get(elt) || []).slice(atmost));
+    return ([] as T[]).concat(...map.values());
+  }
+  return arr;
 }
 function removeAtMostN_vialoop<T>(arr: T[], elt: T, atmost: number): T[] {
   let ret = [];
@@ -327,7 +330,7 @@ export function dealRoundNoFolding(nplayers: number, seed?: number) {
 }
 
 if (require.main === module) {
-  let {pockets, community, detailed} = dealRoundNoFolding(4, 1);
+  let {pockets, community, detailed} = dealRoundNoFolding(4, 3);
   console.log('pockets\n', pockets)
   console.log('community\n', community);
   console.log('detailed\n', detailed);

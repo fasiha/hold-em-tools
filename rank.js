@@ -244,8 +244,11 @@ function removeAtMostN_viamaps(arr, elt, atmost, cache) {
             cache.map = map;
         }
     }
-    map.set(elt, (map.get(elt) || []).slice(atmost));
-    return [].concat(...map.values());
+    if (map.has(elt)) {
+        map.set(elt, (map.get(elt) || []).slice(atmost));
+        return [].concat(...map.values());
+    }
+    return arr;
 }
 function removeAtMostN_vialoop(arr, elt, atmost) {
     let ret = [];
@@ -352,7 +355,7 @@ function dealRoundNoFolding(nplayers, seed) {
 }
 exports.dealRoundNoFolding = dealRoundNoFolding;
 if (require.main === module) {
-    let { pockets, community, detailed } = dealRoundNoFolding(4, 1);
+    let { pockets, community, detailed } = dealRoundNoFolding(4, 3);
     console.log('pockets\n', pockets);
     console.log('community\n', community);
     console.log('detailed\n', detailed);
