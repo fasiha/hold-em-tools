@@ -111,74 +111,52 @@ function bestStraightFlush(hand) {
 }
 exports.bestStraightFlush = bestStraightFlush;
 // 3: four of a kind
-function removeCards(hand, remove) { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
-function best4OfAKind(hand) {
-    if (hand.length < 4) {
-        return [0, 0];
+function bestNOfAKind(hand, N) {
+    let kickersNeeded = 5 - N;
+    if (hand.length < N) {
+        return Array.from(Array(kickersNeeded + 1), _ => 0);
     }
     let cardsPerRank = Array.from(Array(13), _ => 0);
-    let quadsFound = [];
+    let hitsFound = [];
     for (let short of hand) {
         const n = ++cardsPerRank[shortToNumber(short)];
-        if (n === 4) {
-            quadsFound.push(short);
+        // push ONLY for `n===N`
+        if (n === N) {
+            hitsFound.push(short);
         }
     }
-    if (quadsFound.length > 0) {
-        let best = shortsToBestNumberAcesHighArr(quadsFound);
-        if (hand.length === 4) {
+    if (hitsFound.length > 0) {
+        let best = shortsToBestNumberAcesHighArr(hitsFound);
+        if (hand.length === N) {
             return [best, 0];
         }
         let bestNumber = numberAcesHighToNumber(best);
-        let kicker = 0;
-        for (let i = 12; i >= 0; i--) {
-            if (i !== bestNumber && cardsPerRank[i] > 0) {
-                kicker = numberToNumberAcesHigh(i);
-                break;
+        let kickers = [];
+        if (0 !== bestNumber && cardsPerRank[0] > 0) {
+            let kicker = numberToNumberAcesHigh(0);
+            for (let copy = cardsPerRank[0]; copy > 0 && kickers.length < kickersNeeded; copy--) {
+                kickers.push(kicker);
             }
         }
-        return [best, kicker];
+        for (let i = 12; i > 0 && kickers.length < kickersNeeded; i--) {
+            if (i !== bestNumber && cardsPerRank[i] > 0) {
+                let kicker = numberToNumberAcesHigh(i);
+                for (let copy = cardsPerRank[i]; copy > 0 && kickers.length < kickersNeeded; copy--) {
+                    kickers.push(kicker);
+                }
+            }
+        }
+        return [best].concat(kickers);
     }
-    return [0, 0];
+    return Array.from(Array(kickersNeeded + 1), _ => 0);
+}
+function best4OfAKind(hand) {
+    const [a, b] = bestNOfAKind(hand, 4);
+    return [a, b];
 }
 exports.best4OfAKind = best4OfAKind;
 // 4: full house. First implement 3-of-a-kind and best-pair
-function handToSubSuits(hand) {
-    let ret = [];
-    let curr = 0;
-    let start = 0;
-    for (let max of 'MZmz') {
-        for (let i = start; i <= hand.length; i++) {
-            if (hand[i] > max || i === hand.length) {
-                ret.push(hand.substring(start, curr));
-                start = curr;
-                break;
-            }
-            curr++;
-        }
-    }
-    return ret;
-}
-function best3OfAKind(hand) {
-    let perSuit = handToSubSuits(hand);
-    let tripsFound = [];
-    for (let suitIdx = 0; suitIdx < 2; suitIdx++) {
-        for (let card of perSuit[suitIdx]) {
-            let rank = shortToNumber(card);
-            let hits = 1;
-            for (let friendIdx = suitIdx + 1; friendIdx < 4; friendIdx++) {
-                let friend = shorts[13 * friendIdx + rank];
-                if (perSuit[friendIdx].indexOf(friend) >= 0 && (++hits) >= 3) {
-                    break;
-                }
-            }
-            if (hits >= 3) {
-                tripsFound.push(card);
-            }
-        }
-    }
-    return tripsFound.map(shortToNumberAcesHigh);
-}
+function best3OfAKind(hand) { return bestNOfAKind(hand, 3); }
 exports.best3OfAKind = best3OfAKind;
 function bestFullHouse(hand) {
     1;
