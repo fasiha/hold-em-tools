@@ -1,6 +1,14 @@
 const test = require('tape');
-const {readableToShort, validateShort, isRoyalFlush, bestStraightFlush, best4OfAKind, best3OfAKind} =
-    require('./skinnyRank');
+const {
+  readableToShort,
+  validateShort,
+  isRoyalFlush,
+  bestStraightFlush,
+  best4OfAKind,
+  best3OfAKind,
+  bestFullHouse,
+  bestPair
+} = require('./skinnyRank');
 
 var parseRank = s => {
   let res = parseInt(s.replace('A', '1'));
@@ -69,5 +77,44 @@ test('3 of a kind', t => {
   t.deepEqual(best3OfAKind(ss('Kc 7s 7d 7h')), [7, 13, 0], 'trip but no pair');
   t.deepEqual(best3OfAKind(ss('7s 7d 7h')), [7, 0, 0], 'trip and nothing else');
   t.deepEqual(best3OfAKind(ss('7s 7d')), [0, 0, 0], 'pair and nothing else');
+  t.end();
+});
+
+test('full house', t => {
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c')), [13, 7]);
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c 7c')), [13, 7], 'two trips ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 7], 'quads and trips ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 7], 'quads and quads ok');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 7], 'quads quads high-pairs get pairs');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2], 'low quad and high trips means trip');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c')), [2, 7], 'low quad and high pairs means low');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [4, 7], 'many quads and high pair');
+  t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6], 'quads can be ignored');
+  t.deepEqual(bestFullHouse(ss('Kc Kh 7s 7c')), [0, 0], 'not full house');
+  t.deepEqual(bestFullHouse(ss('Kc 7s 7d 7h')), [0, 0], 'trip but no pair');
+  t.deepEqual(bestFullHouse(ss('7s 7d 7h')), [0, 0], 'trip and nothing else');
+  t.deepEqual(bestFullHouse(ss('7s 7d')), [0, 0], 'pair and nothing else');
+  t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c Qs Qd Qh')), [13, 12], 'do not ignore second trips higher than pairs');
+  t.end();
+});
+
+test('best pair', t => {
+  t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c')), [13, 7, 7, 0]);
+  t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c 7c')), [13, 7, 7, 7], 'two trips ok, returns at most 4');
+  t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 7, 7, 7], 'quads and trips ok');
+  t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 7, 7, 7], 'quads and quads ok');
+  t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 7, 7, 2], 'quads quads high-pairs get pairs');
+  t.deepEqual(bestPair(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2, 2, 2], 'low quad and high trips means trip');
+  t.deepEqual(bestPair(ss('2c 2h 2d 2s 7s 7c')), [7, 2, 2, 2], 'low quad and high pairs means low');
+  t.deepEqual(bestPair(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [7, 4, 4, 4], 'many quads and high pair');
+  t.deepEqual(bestPair(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6, 6, 4], 'quads can be ignored');
+  t.deepEqual(bestPair(ss('Kc Kh 7s 7c')), [13, 7, 7, 0], 'not full house');
+  t.deepEqual(bestPair(ss('Kc 7s 7d 7h')), [7, 13, 0, 0], 'trip but no pair');
+  t.deepEqual(bestPair(ss('7s 7d 7h')), [7, 0, 0, 0], 'trip and nothing else');
+  t.deepEqual(bestPair(ss('7s 7d')), [7, 0, 0, 0], 'pair and nothing else');
+  t.deepEqual(bestPair(ss('7s')), [0, 0, 0, 0], 'single');
+  t.deepEqual(bestPair(ss('7s 8s 9s 10s')), [0, 0, 0, 0], 'no pair => 4 zeros');
+  t.deepEqual(bestPair(ss('7s 8s 9s 10s Js Qs Ks')), [0, 0, 0, 0], 'tons of no pair still has 4 zeros');
+  t.deepEqual(bestPair(ss('Ac Ah Ad 7s 7c')), [14, 7, 7, 0], 'aces high');
   t.end();
 });

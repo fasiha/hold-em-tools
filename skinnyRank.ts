@@ -94,8 +94,8 @@ export function bestStraightFlush(hand: Hand): number {
   return 0;
 }
 // 3: four of a kind
-function bestNOfAKind(hand: Hand, N: number): number[] {
-  let kickersNeeded = 5 - N;
+function bestNOfAKind(hand: Hand, N: number, nokickers: boolean = false): number[] {
+  let kickersNeeded = nokickers ? 0 : 5 - N;
   if (hand.length < N) { return Array.from(Array(kickersNeeded + 1), _ => 0); }
   let cardsPerRank: number[] = Array.from(Array(13), _ => 0);
   let hitsFound: string[] = [];
@@ -106,6 +106,7 @@ function bestNOfAKind(hand: Hand, N: number): number[] {
   }
   if (hitsFound.length > 0) {
     let best = shortsToBestNumberAcesHighArr(hitsFound);
+    if (nokickers) { return [best]; }
     if (hand.length === N) { return [best].concat(Array.from(Array(kickersNeeded), _ => 0)); }
     let bestNumber = numberAcesHighToNumber(best);
     let kickers: number[] = [];
@@ -120,16 +121,17 @@ function bestNOfAKind(hand: Hand, N: number): number[] {
   }
   return Array.from(Array(kickersNeeded + 1), _ => 0);
 }
-export function best4OfAKind(hand: Hand): [number, number] {
-  const [a, b] = bestNOfAKind(hand, 4);
-  return [a, b];
-}
-// 4: full house. First implement 3-of-a-kind and best-pair
-export function best3OfAKind(hand: Hand) { return bestNOfAKind(hand, 3); }
-function bestFullHouse(hand: Hand): number {
-  1;
-
-  return 0;
+export function best4OfAKind(hand: Hand): number[] { return bestNOfAKind(hand, 4); }
+// 4: full house. First implement 3-of-a-kind (#7) and best-pair (#9)
+export function best3OfAKind(hand: Hand): number[] { return bestNOfAKind(hand, 3); }
+export function bestPair(hand: Hand): number[] { return bestNOfAKind(hand, 2); }
+function removeCards(hand: Hand, remove: Hand): Hand { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
+export function bestFullHouse(hand: Hand): number[] {
+  let trip = bestNOfAKind(hand, 3, true)[0];
+  let rank = numberAcesHighToNumber(trip);
+  let toremove = [0, 1, 2, 3].map(n => shorts[n * 13 + rank]).join('');
+  let pair = bestNOfAKind(removeCards(hand, toremove), 2, true)[0];
+  return (trip && pair) ? [trip, pair] : [0, 0];
 }
 
 if (require.main === module) {

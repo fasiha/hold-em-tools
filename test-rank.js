@@ -130,7 +130,7 @@ test('best pair', t => {
   t.end();
 });
 
-test('best pair', t => {
+test('best high card', t => {
   t.deepEqual(bestHighCard(ss('Kc Kh Qs Js 10s 9s 8s 7s')), [13, 13, 12, 11, 10], 'at most five returned');
   t.deepEqual(bestHighCard(ss('Kc Kh 7s 7c Kd')), [13, 13, 13, 7, 7]);
   t.deepEqual(bestHighCard(ss('Ac Kh Kd 7s 7c')), [14, 13, 13, 7, 7]);
