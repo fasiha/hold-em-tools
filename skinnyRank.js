@@ -134,11 +134,11 @@ function sweep(hand, memo) {
     let bestQuad = 0, bestTrip = 0, bestPair = 0, secondBestPair = 0;
     for (let i = 13; i > 0; i--) {
         const hits = memo.cardsPerRank[i % 13];
-        bestQuad |= (hits === 4 && numberToNumberAcesHigh(i % 13)) || 0;
-        bestTrip |= (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0;
-        bestPair |= (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
+        bestQuad = bestQuad || (hits === 4 && numberToNumberAcesHigh(i % 13)) || 0;
+        bestTrip = bestTrip || (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0;
+        bestPair = bestPair || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
         if (bestPair) {
-            secondBestPair |= (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
+            secondBestPair = secondBestPair || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
         }
     }
     return [bestQuad, bestTrip, bestPair, secondBestPair];
