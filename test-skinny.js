@@ -78,6 +78,15 @@ test('full house', t => {
   t.end();
 });
 
+test('flush', t => {
+  const mk = (output) => ({score: fl, output});
+  t.deepEqual(score(ss('10c 9c 8c 7c 2c')), mk([10, 9, 8, 7, 2]));
+  t.deepEqual(score(ss('10c 9c 8c 7c 2c Ah 8h 9h 5h')), mk([10, 9, 8, 7, 2]));
+  t.deepEqual(score(ss('10c 9c 8c 7c Ah 8h 9h 5h 2h')), mk([14, 9, 8, 5, 2]), 'aces high');
+  t.throws(() => score(ss('10c 9c 8c 7c 2c Ah 8h 9h 5h 4h')), 'do not know how to handle two flushes FIXME');
+  t.end();
+});
+
 // t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([0, 0, 0]), 'not full house');
 // t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([7, 13, 0]), 'trip but no pair');
 // t.deepEqual(score(ss('7s 7d 7h')), mk([7, 0, 0]), 'trip and nothing else');

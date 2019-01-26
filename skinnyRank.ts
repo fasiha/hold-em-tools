@@ -153,7 +153,7 @@ export function score(hand: Hand): {score: number, output: number[]} {
     return {score: 4, output: [trip, pair]};
   }
 
-  const flush = bestFlush(hand);
+  const flush = bestFlushUnsafe(hand);
   if (flush[0] > 0) { return {score: 5, output: flush}; }
 
   const str = bestStraight(hand, memo);
@@ -214,20 +214,16 @@ function handToSubSuits(hand: Hand) {
   }
   return ret;
 }
-function last(s: string): string { return s[s.length - 1]; }
-function bestFlush(hand: Hand): number[] {
+function bestFlushUnsafe(hand: Hand): number[] {
   let suits = handToSubSuits(hand);
   if (suits.length === 0) { return [0, 0, 0, 0, 0]; }
-  let bestSoFar = -1;
-  let idxBest: number = 0;
-  for (let idx = 0; idx < suits.length; idx++) {
-    const curr = shortToNumberAcesHigh(last(suits[idx]));
-    if (curr > bestSoFar) {
-      bestSoFar = curr;
-      idxBest = idx;
-    }
+  // if more than one flush is found, they have to be sorted element-wise, and I can't be having with that.
+  // FIXME
+  if (suits.length > 1) { throw new Error('requires safe flush finder'); }
+  if (shortToNumber(suits[0][0]) === 0) {
+    return [14].concat(suits[0].slice(-4).split('').reverse().map(shortToNumberAcesHigh));
   }
-  return suits[idxBest].slice(-5).split('').map(shortToNumberAcesHigh);
+  return suits[0].slice(-5).split('').reverse().map(shortToNumberAcesHigh);
 }
 
 if (require.main === module) {}

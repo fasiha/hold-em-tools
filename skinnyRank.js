@@ -185,7 +185,7 @@ function score(hand) {
     else if (trip && pair) {
         return { score: 4, output: [trip, pair] };
     }
-    const flush = bestFlush(hand);
+    const flush = bestFlushUnsafe(hand);
     if (flush[0] > 0) {
         return { score: 5, output: flush };
     }
@@ -265,21 +265,19 @@ function handToSubSuits(hand) {
     }
     return ret;
 }
-function last(s) { return s[s.length - 1]; }
-function bestFlush(hand) {
+function bestFlushUnsafe(hand) {
     let suits = handToSubSuits(hand);
     if (suits.length === 0) {
         return [0, 0, 0, 0, 0];
     }
-    let bestSoFar = -1;
-    let idxBest = 0;
-    for (let idx = 0; idx < suits.length; idx++) {
-        const curr = shortToNumberAcesHigh(last(suits[idx]));
-        if (curr > bestSoFar) {
-            bestSoFar = curr;
-            idxBest = idx;
-        }
+    // if more than one flush is found, they have to be sorted element-wise, and I can't be having with that.
+    // FIXME
+    if (suits.length > 1) {
+        throw new Error('requires safe flush finder');
     }
-    return suits[idxBest].slice(-5).split('').map(shortToNumberAcesHigh);
+    if (shortToNumber(suits[0][0]) === 0) {
+        return [14].concat(suits[0].slice(-4).split('').reverse().map(shortToNumberAcesHigh));
+    }
+    return suits[0].slice(-5).split('').reverse().map(shortToNumberAcesHigh);
 }
 if (require.main === module) { }
