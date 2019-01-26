@@ -164,7 +164,7 @@ function appendKickers(hand, memo, nCardsFound, acesLow) {
             return acesLow.map(numberToNumberAcesHigh);
         }
     }
-    return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded - acesLow.length + 1), _ => 0));
+    return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded), _ => 0));
 }
 function score(hand) {
     if (isRoyalFlush(hand)) {

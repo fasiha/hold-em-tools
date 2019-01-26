@@ -135,7 +135,7 @@ function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, acesLow: num
     for (let j = 0; j < howMany && kickersNeeded > 0; j++, kickersNeeded--) { acesLow.push(number); }
     if (kickersNeeded <= 0) { return acesLow.map(numberToNumberAcesHigh); }
   }
-  return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded - acesLow.length + 1), _ => 0));
+  return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded), _ => 0));
 }
 
 export function score(hand: Hand): {score: number, output: number[]} {

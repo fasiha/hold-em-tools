@@ -59,9 +59,9 @@ test('4 of a kind', t => {
 test('3 of a kind', t => {
   const mk = (output) => ({score: trip, output});
   t.deepEqual(score(ss('3c 3d 3s')), mk([3, 0, 0]), '3 doesn\'t cut it');
-
-  t.deepEqual(score(ss('Ac Ah Ad 7c')), mk([14, 7]), 'aces high');
-  t.deepEqual(score(ss('Kc Kh Kd 7c')), mk([13, 7]));
+  t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([7, 13, 0]), 'trip but no pair');
+  t.deepEqual(score(ss('Ac Ah Ad 7c')), mk([14, 7, 0]), 'aces high');
+  t.deepEqual(score(ss('Kc Kh Kd 7c')), mk([13, 7, 0]));
   t.deepEqual(score(ss('Ac Ah Ad 7c 2s')), mk([14, 7, 2]), 'aces high');
   t.deepEqual(score(ss('Kc Kh Kd 7c 2s')), mk([13, 7, 2]));
   t.end();
@@ -99,26 +99,9 @@ test('straight', t => {
   t.end();
 });
 
-// t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([0, 0, 0]), 'not full house');
-// t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([7, 13, 0]), 'trip but no pair');
-// t.deepEqual(score(ss('7s 7d 7h')), mk([7, 0, 0]), 'trip and nothing else');
-// t.deepEqual(score(ss('7s 7d')), mk([0, 0, 0]), 'pair and nothing else');
-
-// t.deepEqual(score(ss('3c 3d')), [0, 0], '2 doesn\'t cut it');
-// t.deepEqual(score(ss('3c')), [0, 0], '1 doesn\'t cut it');
-
-// t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([0, 0]), 'not full house');
-// t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([0, 0]), 'trip but no pair');
-// t.deepEqual(score(ss('7s 7d 7h')), mk([0, 0]), 'trip and nothing else');
-// t.deepEqual(score(ss('7s 7d')), mk([0, 0]), 'pair and nothing else');
-
-// t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([0, 0, 0]), 'trip but no pair');
-// t.deepEqual(score(ss('7s 7d 7h')), mk([0, 0, 0]), 'trip and nothing else');
-// t.deepEqual(score(ss('7s 7d')), mk([0, 0, 0]), 'pair and nothing else');
-
 test('best two pairs', t => {
   const mk = (output) => ({score: twop, output});
-  t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([13, 7]));
+  t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([13, 7, 0]));
   t.deepEqual(score(ss('Kc Kh 9d 7c 7c')), mk([13, 7, 9]));
   t.deepEqual(score(ss('Kc Ks 7s 7d 2s 2h')), mk([13, 7, 2]));
   t.deepEqual(score(ss('2c 2h 3s 3d 4s 4d 7s 7c')), mk([7, 4, 3]));
@@ -126,22 +109,19 @@ test('best two pairs', t => {
   t.end();
 });
 
-// test('best pair', t => {
-//   t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c')), [13, 7, 7, 0]);
-//   t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c 7c')), [13, 7, 7, 7], 'two trips ok, returns at most 4');
-//   t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 7, 7, 7], 'quads and trips ok');
-//   t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 7, 7, 7], 'quads and quads ok');
-//   t.deepEqual(bestPair(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 7, 7, 2], 'quads quads high-pairs get pairs');
-//   t.deepEqual(bestPair(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2, 2, 2], 'low quad and high trips means trip');
-//   t.deepEqual(bestPair(ss('2c 2h 2d 2s 7s 7c')), [7, 2, 2, 2], 'low quad and high pairs means low');
-//   t.deepEqual(bestPair(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [7, 4, 4, 4], 'many quads and high pair');
-//   t.deepEqual(bestPair(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6, 6, 4], 'quads can be
-//   ignored'); t.deepEqual(bestPair(ss('Kc Kh 7s 7c')), [13, 7, 7, 0], 'not full house'); t.deepEqual(bestPair(ss('Kc
-//   7s 7d 7h')), [7, 13, 0, 0], 'trip but no pair'); t.deepEqual(bestPair(ss('7s 7d 7h')), [7, 0, 0, 0], 'trip and
-//   nothing else'); t.deepEqual(bestPair(ss('7s 7d')), [7, 0, 0, 0], 'pair and nothing else');
-//   t.deepEqual(bestPair(ss('7s')), [0, 0, 0, 0], 'single');
-//   t.deepEqual(bestPair(ss('7s 8s 9s 10s')), [0, 0, 0, 0], 'no pair => 4 zeros');
-//   t.deepEqual(bestPair(ss('7s 8s 9s 10s Js Qs Ks')), [0, 0, 0, 0], 'tons of no pair still has 4 zeros');
-//   t.deepEqual(bestPair(ss('Ac Ah Ad 7s 7c')), [14, 7, 7, 0], 'aces high');
-//   t.end();
-// });
+test('pair', t => {
+  const mk = (output) => ({score: pair, output});
+  t.deepEqual(score(ss('Kc Kh 7c')), mk([13, 7, 0, 0]));
+  t.deepEqual(score(ss('7s 7d')), mk([7, 0, 0, 0]), 'pair and nothing else');
+  t.deepEqual(score(ss('Ac Ah 7c')), mk([14, 7, 0, 0]), 'aces high');
+  t.end();
+});
+
+test('hi card', t => {
+  const mk = (output) => ({score: hic, output});
+  t.deepEqual(score(ss('Kc Qs 7c 2d 3h')), mk([13, 12, 7, 3, 2]));
+  t.deepEqual(score(ss('Kc Qs 7c 5s 2d 3h')), mk([13, 12, 7, 5, 3]));
+  t.deepEqual(score(ss('Kc Qs 7c')), mk([13, 12, 7, 0, 0]));
+  t.deepEqual(score(ss('3c')), mk([3, 0, 0, 0, 0]), '1 doesn\'t cut it');
+  t.end();
+});
