@@ -67,6 +67,16 @@ test('3 of a kind', t => {
   t.end();
 });
 
+test('full house', t => {
+  const mk = (output) => ({score: fh, output});
+  t.deepEqual(score(ss('Kc Kh Kd 7s 7c')), mk([13, 7]));
+  t.deepEqual(score(ss('Kc Kh Kd 7s 7c 7c')), mk([13, 7]), 'two trips ok');
+  t.deepEqual(score(ss('2c 2h 2d 7s 7c 7d')), mk([7, 2]), 'low quad and high trips means trip');
+  t.deepEqual(score(ss('2c 2h 2d 7s 7c')), mk([2, 7]), 'low quad and high pairs means low');
+  t.deepEqual(score(ss('Kc Kh Kd 7s 7c Qs Qd Qh')), mk([13, 12]), 'do not ignore second trips higher than pairs');
+  t.end();
+});
+
 // t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([0, 0, 0]), 'not full house');
 // t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([7, 13, 0]), 'trip but no pair');
 // t.deepEqual(score(ss('7s 7d 7h')), mk([7, 0, 0]), 'trip and nothing else');
@@ -75,23 +85,10 @@ test('3 of a kind', t => {
 // t.deepEqual(score(ss('3c 3d')), [0, 0], '2 doesn\'t cut it');
 // t.deepEqual(score(ss('3c')), [0, 0], '1 doesn\'t cut it');
 
-// test('full house', t => {
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c')), [13, 7]);
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c 7c')), [13, 7], 'two trips ok');
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d')), [13, 7], 'quads and trips ok');
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7c 7d 7h')), [13, 7], 'quads and quads ok');
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd Ks 7s 7d 2s 2c 2d 2h')), [13, 7], 'quads quads high-pairs get pairs');
-//   t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c 7d')), [7, 2], 'low quad and high trips means trip');
-//   t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 7s 7c')), [2, 7], 'low quad and high pairs means low');
-//   t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7s 7c')), [4, 7], 'many quads and high pair');
-//   t.deepEqual(bestFullHouse(ss('2c 2h 2d 2s 3s 3d 3h 3c 4s 4d 4h 4c 7c 7s 7h 6s 6d')), [7, 6], 'quads can be
-//   ignored'); t.deepEqual(bestFullHouse(ss('Kc Kh 7s 7c')), [0, 0], 'not full house');
-//   t.deepEqual(bestFullHouse(ss('Kc 7s 7d 7h')), [0, 0], 'trip but no pair');
-//   t.deepEqual(bestFullHouse(ss('7s 7d 7h')), [0, 0], 'trip and nothing else');
-//   t.deepEqual(bestFullHouse(ss('7s 7d')), [0, 0], 'pair and nothing else');
-//   t.deepEqual(bestFullHouse(ss('Kc Kh Kd 7s 7c Qs Qd Qh')), [13, 12], 'do not ignore second trips higher than
-//   pairs'); t.end();
-// });
+// t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([0, 0]), 'not full house');
+// t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([0, 0]), 'trip but no pair');
+// t.deepEqual(score(ss('7s 7d 7h')), mk([0, 0]), 'trip and nothing else');
+// t.deepEqual(score(ss('7s 7d')), mk([0, 0]), 'pair and nothing else');
 
 // test('best pair', t => {
 //   t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c')), [13, 7, 7, 0]);

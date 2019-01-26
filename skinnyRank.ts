@@ -111,17 +111,18 @@ function memoize(hand: Hand): Memo {
   for (let short of hand) { cardsPerRank[shortToNumber(short)]++; }
   return {cardsPerRank};
 }
-function sweep(hand: Hand, memo: Memo): [number, number, number, number] {
+function sweep(hand: Hand, memo: Memo): [number, number, number, number, number] {
   if (memo.cardsPerRank.length === 0) { return sweep(hand, memoize(hand)); }
-  let bestQuad = 0, bestTrip = 0, bestPair = 0, secondBestPair = 0;
+  let quad = 0, trip = 0, trip2 = 0, pair = 0, pair2 = 0;
   for (let i = 13; i > 0; i--) {
     const hits = memo.cardsPerRank[i % 13];
-    bestQuad = bestQuad || (hits === 4 && numberToNumberAcesHigh(i % 13)) || 0;
-    bestTrip = bestTrip || (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0;
-    bestPair = bestPair || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
-    if (bestPair) { secondBestPair = secondBestPair || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0; }
+    quad = quad || (hits === 4 && numberToNumberAcesHigh(i % 13)) || 0;
+    if (trip) { trip2 = trip2 || (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0; }
+    if (pair) { pair2 = pair2 || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0; }
+    trip = trip || (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0;
+    pair = pair || (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
   }
-  return [bestQuad, bestTrip, bestPair, secondBestPair];
+  return [quad, trip, trip2, pair, pair2];
 }
 
 function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, rankAcesLowFound: number,
@@ -146,9 +147,13 @@ export function score(hand: Hand): {score: number, output: number[]} {
   if (sf) { return {score: 2, output: [sf]}; }
 
   let memo = memoize(hand);
-  let [quad, trip, pair, pair2] = sweep(hand, memo);
+  let [quad, trip, trip2, pair, pair2] = sweep(hand, memo);
   if (quad) { return {score: 3, output: appendKickers(hand, memo, 4, numberAcesHighToNumber(quad))}; }
-  if (trip && pair) { return {score: 4, output: [trip, pair]}; }
+  if (trip && trip2) {
+    return {score: 4, output: [trip, trip2]};
+  } else if (trip && pair) {
+    return {score: 4, output: [trip, pair]};
+  }
 
   const flush = bestFlush(hand);
   if (flush[0] > 0) { return {score: 5, output: flush}; }
