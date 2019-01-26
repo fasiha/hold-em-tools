@@ -1,3 +1,5 @@
+import {isString} from "util";
+
 function initCards() {
   const shorts = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
   const ranks = '0123456789JQK'.split('');
@@ -17,15 +19,22 @@ function initCards() {
 const {shorts, suits, ranks} = initCards();
 
 const loACode = 'a'.charCodeAt(0);
-const upACode = 'A'.charCodeAt(0);
-function shortToNumber(short: string): number {
-  let uppercase = short < 'a';
-  return (short.charCodeAt(0) - (uppercase ? upACode : loACode)) % 13;
-}
+/**
+ * Convert a short (character) to a number that could index into `short` to get a suit-mate.
+ * Old trick: convert to lowercase by `(x | 0b100000)`, i.e., turn on the 6th last significant bit.
+ * @param short string in `shorts`
+ * @returns number between 0 and 12 inclusive: 0 ace, 1 for deuce, 12 for king.
+ */
+export function shortToNumber(short: string): number { return ((short.charCodeAt(0)|0b100000) - loACode) % 13; }
 const ACEHIRANK = 13;
 // (0 to 12) || 13 means aces get mapped to 13.
-function numberToNumberAcesHigh(rank: number): number { return (rank || ACEHIRANK) + 1; }
-function shortToNumberAcesHigh(short: string): number { return numberToNumberAcesHigh(shortToNumber(short)); }
+/**
+ * Maps a number between 0 and 12 (inclusive) to the natural rank.
+ * @param num number between 0 and 12 inclusive
+ * @returns number between 2 and 14 inclusive. 2 deuce, 3 three, 13 king, 14 ace.
+ */
+export function numberToNumberAcesHigh(num: number): number { return (num || ACEHIRANK) + 1; }
+export function shortToNumberAcesHigh(short: string): number { return numberToNumberAcesHigh(shortToNumber(short)); }
 function shortsToBestNumberAcesHighArr(shorts: string[]): number {
   return Math.max(...shorts.map(shortToNumberAcesHigh));
 }
@@ -93,60 +102,123 @@ export function bestStraightFlush(hand: Hand): number {
   if (straightFlushesFound.length > 0) { return Math.max(...straightFlushesFound.map(shortToNumberAcesHigh)); }
   return 0;
 }
-// 3: four of a kind
-function bestNOfAKind(hand: Hand, N: number, nokickers: boolean = false,
-                      memo: {cardsPerRank?: number[]}|undefined = undefined): number[] {
-  let kickersNeeded = nokickers ? 0 : 5 - N;
-  if (hand.length < N) { return Array.from(Array(kickersNeeded + 1), _ => 0); }
-  let hitsFound: string[] = [];
-  let cardsPerRank: number[];
-  let best = 0;
-  if (memo && memo.cardsPerRank) {
-    cardsPerRank = memo.cardsPerRank;
-    for (let i = 13; i > 0; i--) {
-      if (cardsPerRank[i % 13] >= N) { hitsFound.push(shorts[i % 13]); }
-    }
-    best = shortToNumberAcesHigh(hitsFound[0]);
-  } else {
-    cardsPerRank = Array.from(Array(13), _ => 0);
-    for (let short of hand) {
-      const n = ++cardsPerRank[shortToNumber(short)];
-      // push ONLY for `n===N`
-      if (n === N) { hitsFound.push(short); }
-    }
-  }
-  if (hitsFound.length > 0) {
-    if (best === 0) { best = shortsToBestNumberAcesHighArr(hitsFound); }
-    if (nokickers) { return [best]; }
-    if (hand.length === N) { return [best].concat(Array.from(Array(kickersNeeded), _ => 0)); }
-    let bestNumber = numberAcesHighToNumber(best);
-    let kickers: number[] = [];
-    for (let j = 13; j > 0 && kickers.length < kickersNeeded; j--) {
-      const i = j % 13; // map 13->0 (i.e., look at aces first) but leave the rest alone.
-      if (i !== bestNumber && cardsPerRank[i] > 0) {
-        let kicker = numberToNumberAcesHigh(i);
-        for (let copy = cardsPerRank[i]; copy > 0 && kickers.length < kickersNeeded; copy--) { kickers.push(kicker); }
-      }
-    }
-    return [best].concat(kickers).concat(Array.from(Array(kickersNeeded - kickers.length), _ => 0));
-  }
-  return Array.from(Array(kickersNeeded + 1), _ => 0);
+
+type Memo = {
+  cardsPerRank: number[]
+};
+function memoize(hand: Hand): Memo {
+  let cardsPerRank = Array.from(Array(13), _ => 0);
+  for (let short of hand) { cardsPerRank[shortToNumber(short)]++; }
+  return {cardsPerRank};
 }
-export function best4OfAKind(hand: Hand): number[] { return bestNOfAKind(hand, 4); }
-// 4: full house. First implement 3-of-a-kind (#7) and best-pair (#9)
-export function best3OfAKind(hand: Hand): number[] { return bestNOfAKind(hand, 3); }
-export function bestPair(hand: Hand): number[] { return bestNOfAKind(hand, 2); }
-function removeCards(hand: Hand, remove: Hand): Hand { return hand.replace(new RegExp(`[${remove}]`, 'g'), ''); }
-export function bestFullHouse(hand: Hand): number[] {
-  let memo: {cardsPerRank?: number[]} = {};
-  let trip = bestNOfAKind(hand, 3, true, memo)[0];
-  let rank = numberAcesHighToNumber(trip);
-  let toremove = [0, 1, 2, 3].map(n => shorts[n * 13 + rank]).join('');
-  let pair = bestNOfAKind(removeCards(hand, toremove), 2, true, memo)[0];
-  return (trip && pair) ? [trip, pair] : [0, 0];
+function sweep(hand: Hand, memo: Memo): [number, number, number, number] {
+  if (memo.cardsPerRank.length === 0) { return sweep(hand, memoize(hand)); }
+  let bestQuad = 0, bestTrip = 0, bestPair = 0, secondBestPair = 0;
+  for (let i = 13; i > 0; i--) {
+    const hits = memo.cardsPerRank[i % 13];
+    bestQuad |= (hits === 4 && numberToNumberAcesHigh(i % 13)) || 0;
+    bestTrip |= (hits === 3 && numberToNumberAcesHigh(i % 13)) || 0;
+    bestPair |= (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0;
+    if (bestPair) { secondBestPair |= (hits === 2 && numberToNumberAcesHigh(i % 13)) || 0; }
+  }
+  return [bestQuad, bestTrip, bestPair, secondBestPair];
 }
 
-if (require.main === module) {
-  console.log(initCards());
-  initHands(true);
+function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, rankAcesLowFound: number,
+                       rank2AcesLow: number = Infinity): number[] {
+  if (!memo.cardsPerRank.length) { return appendKickers(hand, memoize(hand), nCardsFound, rankAcesLowFound); }
+  let kickersNeeded: number = 5 - nCardsFound;
+  let ret = [numberToNumberAcesHigh(rankAcesLowFound)];
+  for (let i = 13; i > 0; i--) {
+    const howMany = memo.cardsPerRank[i % 13];
+    if ((i % 13) === rankAcesLowFound || howMany === 0 || (i % 13) === rank2AcesLow) { continue; }
+    const number = numberToNumberAcesHigh(i % 13);
+    for (let j = 0; j < howMany && kickersNeeded > 0; j++, kickersNeeded--) { ret.push(number); }
+    if (kickersNeeded <= 0) { return ret; }
+  }
+  return ret.concat(Array.from(Array(kickersNeeded - ret.length + 1), _ => 0));
 }
+
+export function score(hand: Hand): {score: number, output: number[]} {
+  if (isRoyalFlush(hand)) { return {score: 1, output: [1]}; }
+
+  const sf = bestStraightFlush(hand);
+  if (sf) { return {score: 2, output: [sf]}; }
+
+  let memo = memoize(hand);
+  let [quad, trip, pair, pair2] = sweep(hand, memo);
+  if (quad) { return {score: 3, output: appendKickers(hand, memo, 4, numberAcesHighToNumber(quad))}; }
+  if (trip && pair) { return {score: 4, output: [trip, pair]}; }
+
+  const flush = bestFlush(hand);
+  if (flush[0] > 0) { return {score: 5, output: flush}; }
+
+  const str = bestStraight(hand, memo);
+  if (str) { return {score: 6, output: [str]}; }
+
+  if (trip) { return {score: 7, output: appendKickers(hand, memo, 3, numberAcesHighToNumber(trip))}; }
+  if (pair && pair2) { return {score: 8, output: appendKickers(hand, memo, 4, pair, pair2)}; }
+  if (pair) { return {score: 9, output: appendKickers(hand, memo, 2, pair)}; }
+  return {score: 10, output: appendKickers(hand, memo, 0, Infinity)};
+}
+export function compareHands(a: Hand, b: Hand): number {
+  let {score: ascore, output: aout} = score(a);
+  let {score: bscore, output: bout} = score(b);
+  if (ascore !== bscore) { return ascore - bscore; }
+  // tie-breakers
+  if (aout.length !== bout.length) { throw new Error('cannot compare hands of unequal size'); }
+  let ret = aout.findIndex((a, i) => (bout as number[])[i] !== a);
+  if (ret === -1) { return 0; }
+  return bout[ret] - aout[ret];
+}
+
+function bestStraight(hand: Hand, memo: Memo): number {
+  if (!memo.cardsPerRank.length) { return bestStraight(hand, memoize(hand)); }
+  let stringSoFar = 0;
+  let prevHits = memo.cardsPerRank[0];
+  let i;
+  // start at king, prev = ace hits
+  for (i = 12; i >= 0; i--) {
+    if (memo.cardsPerRank[i] > 0 && prevHits > 0) {
+      stringSoFar++;
+    } else {
+      stringSoFar = 0;
+    }
+    if (stringSoFar >= 4) { return numberToNumberAcesHigh(i + stringSoFar); }
+    prevHits = memo.cardsPerRank[i];
+  }
+  return 0;
+}
+function handToSubSuits(hand: Hand) {
+  let ret: string[] = [];
+  let curr = 0;
+  let start = 0;
+  for (let max of 'MZmz') {
+    for (let i = start; i <= hand.length; i++) {
+      if (hand[i] > max || i === hand.length) {
+        if (curr - start >= 5) { ret.push(hand.substring(start, curr)); }
+        start = curr;
+        break;
+      }
+      curr++;
+    }
+  }
+  return ret;
+}
+function last(s: string): string { return s[s.length - 1]; }
+function bestFlush(hand: Hand): number[] {
+  let suits = handToSubSuits(hand);
+  if (suits.length === 0) { return [0, 0, 0, 0, 0]; }
+  let bestSoFar = -1;
+  let idxBest: number = 0;
+  for (let idx = 0; idx < suits.length; idx++) {
+    const curr = shortToNumberAcesHigh(last(suits[idx]));
+    if (curr > bestSoFar) {
+      bestSoFar = curr;
+      idxBest = idx;
+    }
+  }
+  return suits[idxBest].slice(-5).split('').map(shortToNumberAcesHigh);
+}
+
+if (require.main === module) {}
