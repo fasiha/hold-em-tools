@@ -125,19 +125,17 @@ function sweep(hand: Hand, memo: Memo): [number, number, number, number, number]
   return [quad, trip, trip2, pair, pair2];
 }
 
-function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, rankAcesLowFound: number,
-                       rank2AcesLow: number = Infinity): number[] {
-  if (!memo.cardsPerRank.length) { return appendKickers(hand, memoize(hand), nCardsFound, rankAcesLowFound); }
+function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, acesLow: number[]): number[] {
+  if (!memo.cardsPerRank.length) { return appendKickers(hand, memoize(hand), nCardsFound, acesLow); }
   let kickersNeeded: number = 5 - nCardsFound;
-  let ret = [numberToNumberAcesHigh(rankAcesLowFound)];
   for (let i = 13; i > 0; i--) {
     const howMany = memo.cardsPerRank[i % 13];
-    if ((i % 13) === rankAcesLowFound || howMany === 0 || (i % 13) === rank2AcesLow) { continue; }
-    const number = numberToNumberAcesHigh(i % 13);
-    for (let j = 0; j < howMany && kickersNeeded > 0; j++, kickersNeeded--) { ret.push(number); }
-    if (kickersNeeded <= 0) { return ret; }
+    if (howMany === 0 || acesLow.indexOf(i % 13) >= 0) { continue; }
+    const number = i % 13;
+    for (let j = 0; j < howMany && kickersNeeded > 0; j++, kickersNeeded--) { acesLow.push(number); }
+    if (kickersNeeded <= 0) { return acesLow.map(numberToNumberAcesHigh); }
   }
-  return ret.concat(Array.from(Array(kickersNeeded - ret.length + 1), _ => 0));
+  return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded - acesLow.length + 1), _ => 0));
 }
 
 export function score(hand: Hand): {score: number, output: number[]} {
@@ -148,7 +146,7 @@ export function score(hand: Hand): {score: number, output: number[]} {
 
   let memo = memoize(hand);
   let [quad, trip, trip2, pair, pair2] = sweep(hand, memo);
-  if (quad) { return {score: 3, output: appendKickers(hand, memo, 4, numberAcesHighToNumber(quad))}; }
+  if (quad) { return {score: 3, output: appendKickers(hand, memo, 4, [numberAcesHighToNumber(quad)])}; }
   if (trip && trip2) {
     return {score: 4, output: [trip, trip2]};
   } else if (trip && pair) {
@@ -161,11 +159,17 @@ export function score(hand: Hand): {score: number, output: number[]} {
   const str = bestStraight(hand, memo);
   if (str) { return {score: 6, output: [str]}; }
 
-  if (trip) { return {score: 7, output: appendKickers(hand, memo, 3, numberAcesHighToNumber(trip))}; }
-  if (pair && pair2) { return {score: 8, output: appendKickers(hand, memo, 4, pair, pair2)}; }
-  if (pair) { return {score: 9, output: appendKickers(hand, memo, 2, pair)}; }
-  return {score: 10, output: appendKickers(hand, memo, 0, Infinity)};
+  if (trip) { return {score: 7, output: appendKickers(hand, memo, 3, [numberAcesHighToNumber(trip)])}; }
+  if (pair && pair2) {
+    return {
+      score: 8,
+      output: appendKickers(hand, memo, 4, [numberAcesHighToNumber(pair), numberAcesHighToNumber(pair2)])
+    };
+  }
+  if (pair) { return {score: 9, output: appendKickers(hand, memo, 2, [numberAcesHighToNumber(pair)])}; }
+  return {score: 10, output: appendKickers(hand, memo, 0, [])};
 }
+
 export function compareHands(a: Hand, b: Hand): number {
   let {score: ascore, output: aout} = score(a);
   let {score: bscore, output: bout} = score(b);

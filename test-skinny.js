@@ -74,6 +74,7 @@ test('full house', t => {
   t.deepEqual(score(ss('2c 2h 2d 7s 7c 7d')), mk([7, 2]), 'low quad and high trips means trip');
   t.deepEqual(score(ss('2c 2h 2d 7s 7c')), mk([2, 7]), 'low quad and high pairs means low');
   t.deepEqual(score(ss('Kc Kh Kd 7s 7c Qs Qd Qh')), mk([13, 12]), 'do not ignore second trips higher than pairs');
+  t.deepEqual(score(ss('Ac Ah Ad 7s 7c')), mk([14, 7]), 'aces high');
   t.end();
 });
 
@@ -89,6 +90,20 @@ test('full house', t => {
 // t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([0, 0]), 'trip but no pair');
 // t.deepEqual(score(ss('7s 7d 7h')), mk([0, 0]), 'trip and nothing else');
 // t.deepEqual(score(ss('7s 7d')), mk([0, 0]), 'pair and nothing else');
+
+// t.deepEqual(score(ss('Kc 7s 7d 7h')), mk([0, 0, 0]), 'trip but no pair');
+// t.deepEqual(score(ss('7s 7d 7h')), mk([0, 0, 0]), 'trip and nothing else');
+// t.deepEqual(score(ss('7s 7d')), mk([0, 0, 0]), 'pair and nothing else');
+
+test('best two pairs', t => {
+  const mk = (output) => ({score: twop, output});
+  t.deepEqual(score(ss('Kc Kh 7s 7c')), mk([13, 7]));
+  t.deepEqual(score(ss('Kc Kh 9d 7c 7c')), mk([13, 7, 9]));
+  t.deepEqual(score(ss('Kc Ks 7s 7d 2s 2h')), mk([13, 7, 2]));
+  t.deepEqual(score(ss('2c 2h 3s 3d 4s 4d 7s 7c')), mk([7, 4, 3]));
+
+  t.end();
+});
 
 // test('best pair', t => {
 //   t.deepEqual(bestPair(ss('Kc Kh Kd 7s 7c')), [13, 7, 7, 0]);
