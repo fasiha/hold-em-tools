@@ -231,17 +231,16 @@ function bestStraight(hand, memo) {
     }
     let stringSoFar = 0;
     let prevHits = memo.cardsPerRank[0];
-    let i;
     // start at king, prev = ace hits
-    for (i = 12; i >= 0; i--) {
+    for (let i = 12; i >= 0; i--) {
         if (memo.cardsPerRank[i] > 0 && prevHits > 0) {
             stringSoFar++;
+            if (stringSoFar >= 4) {
+                return numberToNumberAcesHigh(i + stringSoFar);
+            }
         }
         else {
             stringSoFar = 0;
-        }
-        if (stringSoFar >= 4) {
-            return numberToNumberAcesHigh(i + stringSoFar);
         }
         prevHits = memo.cardsPerRank[i];
     }
