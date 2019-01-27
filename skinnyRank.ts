@@ -249,11 +249,14 @@ import {combinations} from './comb';
 const {writeFile} = require('fs');
 if (require.main === module) {
   const r = 7;
-  let arr = new Uint8Array(ncr(shorts.length, r));
+  let arr = new Uint8Array((r + 1) * ncr(shorts.length, r));
   let i = 0;
   for (let hand of combinations(shorts, r)) {
-    arr[i++] = fastScore(hand.join(''));
-    if ((i % 1e5) === 0) { console.log(i / 1e6); }
+    let s = hand.join('');
+    let n = fastScore(s);
+    Buffer.from(s).copy(arr, i * (r + 1));
+    arr[i * (r + 1) + r] = n;
+    if (((++i) % 1e5) === 0) { console.log(i / 1e6); }
   }
-  writeFile('out.bin', arr, (err: any) => console.log(err));
+  writeFile('handsScore.bin', arr, (err: any) => console.log(err));
 }
