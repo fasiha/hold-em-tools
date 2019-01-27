@@ -1,5 +1,3 @@
-import {isString} from "util";
-
 function initCards() {
   const shorts = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
   const ranks = '0123456789JQK'.split('');
@@ -138,6 +136,22 @@ function appendKickers(hand: Hand, memo: Memo, nCardsFound: number, acesLow: num
   return acesLow.map(numberToNumberAcesHigh).concat(Array.from(Array(kickersNeeded), _ => 0));
 }
 
+export function fastScore(hand: Hand): number {
+  // const rf = 1, sf = 2, quad = 3, fh = 4, fl = 5, str = 6, trip = 7, twop = 8, pair = 9, hic = 10;
+  if (isRoyalFlush(hand)) { return 1; }
+  if (bestStraightFlush(hand)) { return 2; }
+  let memo = memoize(hand);
+  let [quad, trip, trip2, pair, pair2] = sweep(hand, memo);
+  if (quad) { return 3; }
+  if (trip && (pair || trip2)) { return 4; }
+  if (bestFlushUnsafe(hand)[0]) { return 5; }
+  if (bestStraight(hand, memo)) { return 6; }
+  if (trip) { return 7; }
+  if (pair && pair2) { return 8; }
+  if (pair) { return 9; }
+  return 10;
+}
+
 export function score(hand: Hand): {score: number, output: number[]} {
   if (isRoyalFlush(hand)) { return {score: 1, output: [1]}; }
 
@@ -226,4 +240,20 @@ function bestFlushUnsafe(hand: Hand): number[] {
   return suits[0].slice(-5).split('').reverse().map(shortToNumberAcesHigh);
 }
 
-if (require.main === module) {}
+function ncr(n: number, r: number): number {
+  let ret = 1;
+  for (let i = 0; i < r; i++) { ret *= (n - i) / (1 + i); }
+  return ret;
+}
+import {combinations} from './comb';
+const {writeFile} = require('fs');
+if (require.main === module) {
+  const r = 7;
+  let arr = new Uint8Array(ncr(shorts.length, r));
+  let i = 0;
+  for (let hand of combinations(shorts, r)) {
+    arr[i++] = fastScore(hand.join(''));
+    if ((i % 1e5) === 0) { console.log(i / 1e6); }
+  }
+  writeFile('out.bin', arr, (err: any) => console.log(err));
+}
