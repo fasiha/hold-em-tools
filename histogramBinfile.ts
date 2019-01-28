@@ -5,14 +5,24 @@ import {initCards} from './skinnyRank'
 
 const {shorts} = initCards();
 
-function search(buf: Buffer, r: number, key: string): number[] {
+export function search(buf: Buffer, r: number, key: string): number[] {
   let occurrences = Array.from(Array(10 + 1), _ => 0);
   let keybuf = Buffer.from(key);
-  for (let n = 0; n < buf.length; n += (r + 1)) {
+  const keylen = key.length;
+  outer: for (let n = 0; n < buf.length; n += (r + 1)) {
     let hand = buf.subarray(n, n + r);
-    let start = 0;
-    for (let idx = 0; idx < keybuf.length && start >= 0; idx++) { start = hand.indexOf(keybuf[idx], start); }
-    if (start >= 0) { occurrences[buf[n + r]]++; }
+    let targetIdx = 0;
+    if (hand[r - 2] < keybuf[0]) { continue; }
+    for (let c of hand) {
+      if (c > keybuf[targetIdx]) {
+        continue outer;
+      } else if (c === keybuf[targetIdx]) {
+        if (++targetIdx === keylen) {
+          occurrences[buf[n + r]]++;
+          continue outer;
+        }
+      }
+    }
   }
   return occurrences;
 }
@@ -27,8 +37,9 @@ if (require.main === module) {
   let npocket = 2;
   let map: Map<string, number[]> = new Map();
   for (let hand of combinations(shorts, npocket)) {
-    map.set(hand.join(), search(buf, r, hand.join()));
-    console.log(hand);
+    let thisOccur = search(buf, r, hand.join(''));
+    map.set(hand.join(''), thisOccur);
+    console.log(hand, thisOccur);
   }
   writeFileSync(`map-npocket${npocket}.json`, JSON.stringify(Array.from(map)));
   console.log(map);
