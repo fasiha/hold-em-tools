@@ -1,4 +1,4 @@
-function initCards() {
+export function initCards() {
   const shorts = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
   const ranks = '0123456789JQK'.split('');
   const suits = 'cdhs'.split('');
@@ -240,15 +240,11 @@ function bestFlushUnsafe(hand: Hand): number[] {
   return suits[0].slice(-5).split('').reverse().map(shortToNumberAcesHigh);
 }
 
-function ncr(n: number, r: number): number {
-  let ret = 1;
-  for (let i = 0; i < r; i++) { ret *= (n - i) / (1 + i); }
-  return ret;
-}
 import {combinations} from './comb';
+import {ncr} from './utils';
 const {writeFile} = require('fs');
 if (require.main === module) {
-  const r = 7;
+  const r = 5;
   let arr = new Uint8Array((r + 1) * ncr(shorts.length, r));
   let i = 0;
   for (let hand of combinations(shorts, r)) {
@@ -258,5 +254,5 @@ if (require.main === module) {
     arr[i * (r + 1) + r] = n;
     if (((++i) % 1e5) === 0) { console.log(i / 1e6); }
   }
-  writeFile('handsScore.bin', arr, (err: any) => console.log(err));
+  writeFile('handsScore-' + r + '.bin', arr, (err: any) => console.log(err));
 }

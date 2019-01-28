@@ -192,3 +192,19 @@ function groupBy(list, f) {
     return ret;
 }
 exports.groupBy = groupBy;
+/**
+ * Evaluates the number of combinations, i.e., how many ways can you choose `r` items for `n`.
+ *
+ * Returns `n! / (r! (n-r)!)`. Evaluates this without using factorials, using only a few arithmetic operations.
+ *
+ * @param n total number of items available
+ * @param r number of items one can choose
+ */
+function ncr(n, r) {
+    let ret = 1;
+    for (let i = 0; i < r; i++) {
+        ret *= (n - i) / (1 + i);
+    }
+    return ret;
+}
+exports.ncr = ncr;

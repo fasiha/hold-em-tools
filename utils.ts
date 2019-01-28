@@ -166,3 +166,17 @@ export function groupBy<T, U>(list: T[]|IterableIterator<T>, f: (x: T) => U): Ma
   }
   return ret;
 }
+
+/**
+ * Evaluates the number of combinations, i.e., how many ways can you choose `r` items for `n`.
+ *
+ * Returns `n! / (r! (n-r)!)`. Evaluates this without using factorials, using only a few arithmetic operations.
+ *
+ * @param n total number of items available
+ * @param r number of items one can choose
+ */
+export function ncr(n: number, r: number): number {
+  let ret = 1;
+  for (let i = 0; i < r; i++) { ret *= (n - i) / (1 + i); }
+  return ret;
+}
