@@ -11,8 +11,12 @@
   "license": "UNLICENSE",
   "devDependencies": {
     "@types/node": "^10.12.18",
-    "knuth-shuffle-seeded": "^1.0.6",
+    "@types/sqlite3": "^3.1.3",
     "tape": "^4.9.2",
     "typescript": "^3.2.4"
+  },
+  "dependencies": {
+    "knuth-shuffle-seeded": "^1.0.6",
+    "sqlite3": "^4.0.6"
   }
 }
