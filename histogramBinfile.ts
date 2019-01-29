@@ -1,6 +1,10 @@
 import {readFileSync, writeFileSync} from 'fs';
+import pify from "pify";
+
 import {combinations} from './comb';
 import {initCards} from './skinnyRank'
+
+var bindAll = require('bind-all');
 
 const {shorts} = initCards();
 
@@ -28,47 +32,39 @@ export function search(buf: Buffer, r: number, key: string): number[] {
 
 import sqlite3 from 'sqlite3';
 if (require.main === module) {
-  const npocket = 2;
-  const r = 5;
-  let buf = readFileSync('handsScore-' + r + '.bin');
-  {
-    let occurrences = Array.from(Array(10 + 1), _ => 0);
-    for (let n = r; n < buf.length; n += (r + 1)) { occurrences[buf[n]]++; }
-    console.log(occurrences.map((n, i) => [n, i]));
-  }
-
-  let db = new sqlite3.Database('holdem-r-' + r + '.sqlite');
-  // db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS holdem (
-      seen TEXT UNIQUE NOT NULL,
-      royalFlush NUMBER,
-      straightFlush NUMBER,
-      fourOak NUMBER,
-      fullHouse NUMBER,
-      flush NUMBER,
-      straight NUMBER,
-      threeOak NUMBER,
-      twoPair NUMBER,
-      pair NUMBER,
-      high NUMBER
-    )`);
-
-  db.parallelize(() => {
-    let i = 0;
-    for (let hand of combinations(shorts, npocket)) {
-      if (++i === 10) { break; }
-      let s = hand.join('');
-      let thisOccur = search(buf, r, s);
-      console.log(hand, thisOccur, 'writing');
-      db.run("INSERT INTO holdem VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [s, ...thisOccur], e => {
-        console.log('inserted')
-        if (e) {
-          console.error('SQLITE error', e);
-          throw e;
-        }
-      });
+  (async () => {
+    const npocket = 3;
+    const r = 7;
+    let buf = readFileSync('handsScore-' + r + '.bin');
+    {
+      let occurrences = Array.from(Array(10 + 1), _ => 0);
+      for (let n = r; n < buf.length; n += (r + 1)) { occurrences[buf[n]]++; }
+      console.log(occurrences.map((n, i) => [n, i]));
     }
-  });
-  // });
-  db.close();
+
+    let db: sqlite3.Database = pify(bindAll(new sqlite3.Database(`holdem-r-${r}-n-${npocket}.sqlite`)));
+    await db.run(`CREATE TABLE IF NOT EXISTS holdem (
+        seen TEXT UNIQUE NOT NULL,
+        royalFlush NUMBER,
+        straightFlush NUMBER,
+        fourOak NUMBER,
+        fullHouse NUMBER,
+        flush NUMBER,
+        straight NUMBER,
+        threeOak NUMBER,
+        twoPair NUMBER,
+        pair NUMBER,
+        high NUMBER
+      )`);
+
+    for (let hand of combinations(shorts, npocket)) {
+      let s = hand.join('');
+      let dbhits: any = await db.get(`SELECT COUNT(1) as hits FROM holdem WHERE seen = ?`, [s]);
+      if ('hits' in dbhits && dbhits.hits > 0) { continue; }
+      let thisOccur = search(buf, r, s);
+      console.log(hand, thisOccur);
+      await db.run("INSERT INTO holdem VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [s, ...thisOccur]);
+    }
+    db.close();
+  })();
 }
