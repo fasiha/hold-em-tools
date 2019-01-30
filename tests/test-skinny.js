@@ -1,5 +1,5 @@
 const test = require('tape');
-const {readableToShort, validateShort, score} = require('./skinnyRank');
+const {readableToShort, validateShort, score} = require('../skinnyRank');
 
 var parseRank = s => {
   let res = parseInt(s.replace('A', '1'));
