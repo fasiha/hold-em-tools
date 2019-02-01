@@ -18,36 +18,40 @@ const skinnyRank_1 = require("./skinnyRank");
 const utils_1 = require("./utils");
 let appendFile = pify_1.default(fs_1.appendFile);
 const { shorts } = skinnyRank_1.initCards();
-function searchBuf3(buf, r, npocket, verbose = false) {
+function searchBufBigN(buf, r, npocket, verbose = false) {
     let char2num = new Map();
     for (let [i, c] of utils_1.enumerate(shorts)) {
         char2num.set(c, i);
     }
-    let maps = Array.from(Array(shorts.length), _ => new Map());
-    let z = Array.from(Array(10), _ => 0);
-    {
-        let i = 0;
-        for (let pocket of comb_1.combinations(shorts, npocket)) {
-            if (verbose && (++i) % 1e5 === 0) {
-                process.stdout.write((i / 1e6).toString() + ' ');
-            }
-            maps[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), z.slice());
+    let str2nums = Array.from(Array(shorts.length), _ => new Map());
+    let totalCombinations = 0;
+    for (let pocket of comb_1.combinations(shorts, npocket)) {
+        str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), totalCombinations);
+        if ((++totalCombinations) % 1e5 === 0 && verbose) {
+            process.stdout.write((totalCombinations / 1e6).toString() + ' ');
         }
     }
-    console.log('Done creating all maps');
+    let hugeOccurBuffer = new Uint32Array(totalCombinations * 10);
     const buflen = buf.length;
-    let i = 0;
-    for (let n = 0; n < buflen; n += (r + 1)) {
-        if (verbose && (++i) % 1e5 === 0) {
+    for (let n = 0, i = 0; n < buflen; n += (r + 1), ++i) {
+        if (verbose && i % 1e5 === 0) {
             console.log(i / 1e6);
         }
         const hand = buf.subarray(n, n + r).toString().split('');
         const rankIdx = buf[n + r] - 1;
         for (let pocket of comb_1.combinations(hand, npocket)) {
-            maps[(char2num.get(pocket[0]) || 0)].get(pocket.join(''))[rankIdx]++;
+            const idx = str2nums[char2num.get(pocket[0]) || 0].get(pocket.join('')) || 0;
+            hugeOccurBuffer[rankIdx + idx]++;
         }
     }
-    return maps;
+    return bigNToStrNumArr(hugeOccurBuffer, npocket);
+}
+function* bigNToStrNumArr(occurBuf, npocket) {
+    let i = 0;
+    for (let pocket of comb_1.combinations(shorts, npocket)) {
+        yield [pocket.join(''), Array.from(occurBuf.slice(i, i + 10))];
+        i += 10;
+    }
 }
 if (require.main === module) {
     (() => __awaiter(this, void 0, void 0, function* () {
@@ -65,14 +69,12 @@ if (require.main === module) {
             const fname = `map-r-${r}-n-${npocket}-search3.ldjson`;
             fs_1.writeFileSync(fname, "");
             let strings = [];
-            for (let map of searchBuf3(buf, r, npocket, true)) {
-                for (let kv of map) {
-                    if (strings.length === 1000) {
-                        yield appendFile(fname, strings.join('\n'));
-                        strings = [];
-                    }
-                    strings.push(JSON.stringify(kv));
+            for (let kv of searchBufBigN(buf, r, npocket, true)) {
+                if (strings.length === 1000) {
+                    yield appendFile(fname, strings.join('\n'));
+                    strings = [];
                 }
+                strings.push(JSON.stringify(kv));
             }
             yield appendFile(fname, strings.join('\n'));
         }
