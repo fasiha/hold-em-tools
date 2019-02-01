@@ -71,7 +71,7 @@ if (require.main === module) {
             let strings = [];
             for (let kv of searchBufBigN(buf, r, npocket, true)) {
                 if (strings.length === 1000) {
-                    yield appendFile(fname, strings.join('\n'));
+                    yield appendFile(fname, strings.join('\n') + '\n');
                     strings = [];
                 }
                 strings.push(JSON.stringify(kv));

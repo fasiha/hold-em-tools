@@ -59,7 +59,7 @@ if (require.main === module) {
       let strings: string[] = [];
       for (let kv of searchBufBigN(buf, r, npocket, true)) {
         if (strings.length === 1000) {
-          await appendFile(fname, strings.join('\n'));
+          await appendFile(fname, strings.join('\n') + '\n');
           strings = [];
         }
         strings.push(JSON.stringify(kv));
