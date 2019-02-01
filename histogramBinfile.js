@@ -66,7 +66,7 @@ if (require.main === module) {
         }
         let args = process.argv.slice(2).map(n => parseInt(n));
         for (let npocket of args) {
-            const fname = `map-r-${r}-n-${npocket}-search3.ldjson`;
+            const fname = `map-r-${r}-n-${npocket}.ldjson`;
             fs_1.writeFileSync(fname, "");
             let strings = [];
             for (let kv of searchBufBigN(buf, r, npocket, true)) {

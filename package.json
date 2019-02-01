@@ -4,6 +4,7 @@
   "description": "",
   "main": "skinnyRank.js",
   "scripts": {
+    "build": "tsc -p .",
     "test": "tape tests/test-*.js"
   },
   "keywords": [],
