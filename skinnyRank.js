@@ -61,7 +61,15 @@ function readableToShort(rank, suit) {
     return shorts[suitIdx * 13 + rankIdx];
 }
 exports.readableToShort = readableToShort;
+function shortToReadable(short) {
+    let suit = shortToSuit(short);
+    let num = shortToNumberAcesHigh(short);
+    let rank = ((num <= 10) && num.toString()) || (num === 11 && 'J') || (num === 12 && 'Q') || (num === 13 && 'K') || 'A';
+    return (rank.length === 1 ? ' ' : '') + rank + suit;
+}
+exports.shortToReadable = shortToReadable;
 function sortString(s) { return s.split('').sort().join(''); }
+exports.sortString = sortString;
 function range(n) { return Array.from(Array(n), (_, n) => n); }
 function flatten(arr) { return [].concat(...arr); }
 function initHands(verbose = false) {

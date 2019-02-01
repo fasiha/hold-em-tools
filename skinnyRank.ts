@@ -52,7 +52,14 @@ export function readableToShort(rank: string, suit: string): string {
   if (rankIdx === -1 || suitIdx === -1) { throw new Error('bad readable: ' + [[rank, rankIdx], [suit, suitIdx]]); }
   return shorts[suitIdx * 13 + rankIdx];
 }
-function sortString(s: string): string { return s.split('').sort().join(''); }
+export function shortToReadable(short: string): string {
+  let suit = shortToSuit(short);
+  let num = shortToNumberAcesHigh(short);
+  let rank =
+      ((num <= 10) && num.toString()) || (num === 11 && 'J') || (num === 12 && 'Q') || (num === 13 && 'K') || 'A';
+  return (rank.length === 1 ? ' ' : '') + rank + suit;
+}
+export function sortString(s: string): string { return s.split('').sort().join(''); }
 function range(n: number): number[] { return Array.from(Array(n), (_, n) => n); }
 function flatten<T>(arr: T[][]): T[] { return ([] as T[]).concat(...arr); }
 function initHands(verbose: boolean = false) {
