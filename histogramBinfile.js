@@ -64,7 +64,7 @@ if (require.main === module) {
             }
             console.log(occurrences.map((n, i) => [n, i]));
         }
-        let args = process.argv.slice(2).map(parseInt);
+        let args = process.argv.slice(2).map(n => parseInt(n));
         for (let npocket of args) {
             const fname = `map-r-${r}-n-${npocket}-search3.ldjson`;
             fs_1.writeFileSync(fname, "");

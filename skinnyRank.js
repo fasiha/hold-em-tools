@@ -70,35 +70,33 @@ function shortToReadable(short) {
 exports.shortToReadable = shortToReadable;
 function sortString(s) { return s.split('').sort().join(''); }
 exports.sortString = sortString;
-function range(n) { return Array.from(Array(n), (_, n) => n); }
-function flatten(arr) { return [].concat(...arr); }
-function initHands(verbose = false) {
-    const rfRanks = '09JQK'.split('');
-    const royalFlushes = suits.map(suit => rfRanks.map(rank => readableToShort(rank, suit)).join(''));
-    if (verbose) {
-        console.log(royalFlushes);
+function search(haystack, needle) {
+    const nhay = haystack.length;
+    const nnee = needle.length;
+    let targetIdx = 0;
+    if (nnee > nhay) {
+        return false;
     }
-    // not used anywhere since there's that jump between ace and 9.
-    const rangeOuter = range(9);
-    const rangeInner = range(5);
-    const straightFlushes = flatten(suits.map(suit => rangeOuter.map(startRank => rangeInner.map(delta => readableToShort(ranks[startRank + delta], suit)).join(''))));
-    if (verbose) {
-        console.log(straightFlushes);
+    for (let c of haystack) {
+        if (c > needle[targetIdx]) {
+            return false;
+        }
+        else if (c === needle[targetIdx]) {
+            if (++targetIdx === nnee) {
+                return true;
+            }
+        }
     }
-    const fours = ranks.map(rank => suits.map(suit => readableToShort(rank, suit)).join(''));
-    if (verbose) {
-        console.log(fours);
-    }
-    return { royalFlushes, straightFlushes };
+    return false;
 }
-const { straightFlushes } = initHands();
+exports.search = search;
 // 1: royal flushes
 function isRoyalFlush(hand) {
     if (hand.length < 5) {
         return 0;
     }
-    return ((hand.startsWith('a') && hand.includes('jklm')) || (hand.includes('JKLM') && hand.includes('A')) ||
-        (hand.includes('wxyz') && hand.includes('n')) || (hand.endsWith('WXYZ') && hand.includes('N')))
+    return ((hand.startsWith('A') && hand.includes('JKLM')) || (hand.includes('jklm') && hand.includes('a')) ||
+        (hand.includes('WXYZ') && hand.includes('N')) || (hand.endsWith('wxyz') && hand.includes('n')))
         ? 1
         : 0;
 }
@@ -326,7 +324,8 @@ const comb_1 = require("./comb");
 const utils_1 = require("./utils");
 const { writeFile } = require('fs');
 if (require.main === module) {
-    const r = 5;
+    let args = process.argv.slice(2);
+    const r = parseInt(args[0]) || 5;
     let arr = new Uint8Array((r + 1) * utils_1.ncr(shorts.length, r));
     let i = 0;
     for (let hand of comb_1.combinations(shorts, r)) {

@@ -1,5 +1,5 @@
 const test = require('tape');
-const {readableToShort, validateShort, score} = require('../skinnyRank');
+const {search, readableToShort, validateShort, score} = require('../skinnyRank');
 
 var parseRank = s => {
   let res = parseInt(s.replace('A', '1'));
@@ -25,6 +25,8 @@ test('royal flush', t => {
   t.deepEqual(score(ss('10d Jd Qd Kd Ad')), mk([1]));
   t.deepEqual(score(ss('10c Jc Qc Kc Ac')), mk([1]));
   t.deepEqual(score(ss('10h Jh Qh Kh Ah')), mk([1]));
+
+  t.deepEqual(score(ss('2h 4h 10d Jd Qd Kd Ad')), mk([1]));
 
   t.deepEqual(score(ss('3s 10s Js Qs Ks As')), mk([1]), 'padding on the left');
   t.deepEqual(score(ss('10s Js Qs Ks As 3s')), mk([1]), 'padding on the right');
@@ -123,5 +125,19 @@ test('hi card', t => {
   t.deepEqual(score(ss('Kc Qs 7c 5s 2d 3h')), mk([13, 12, 7, 5, 3]));
   t.deepEqual(score(ss('Kc Qs 7c')), mk([13, 12, 7, 0, 0]));
   t.deepEqual(score(ss('3c')), mk([3, 0, 0, 0, 0]), '1 doesn\'t cut it');
+  t.end();
+});
+
+test('search', t => {
+  t.ok(search('abcde', 'b'));
+  t.ok(search('abcde', 'a'));
+  t.ok(search('abcde', 'e'));
+  t.notok(search('abz', 'q'));
+  t.ok(search('aqvz', 'qv'));
+  t.ok(search('aqv', 'qv'));
+  t.ok(search('qvz', 'qv'));
+  t.ok(search('aqrvz', 'qv'));
+  t.notok(search('qv', 'aqvz'));
+  t.ok(search('qv', 'qv'));
   t.end();
 });

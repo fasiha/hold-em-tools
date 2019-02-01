@@ -25,7 +25,7 @@ if (module === require.main) {
     }
     let histogram = new Map();
     try {
-        let rows = fs_1.readFileSync('map-r-7-n-2.json', 'utf8').trim().split('\n').map(s => JSON.parse(s));
+        let rows = fs_1.readFileSync('map-r-7-n-2.ldjson', 'utf8').trim().split('\n').map(s => JSON.parse(s));
         histogram.set(2, new Map(rows));
     }
     catch (e) {
@@ -49,7 +49,7 @@ if (module === require.main) {
             let h = histogram.get(2);
             if (h) {
                 let hist = h.get(initial.slice(0, 2).sort().join('')) || [];
-                printable += ' :: Histogram: ' + hist.join(' ');
+                printable += ` :: Histogram: [${hist.join(', ')}]`;
             }
         }
         return printable;
