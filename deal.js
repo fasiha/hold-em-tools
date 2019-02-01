@@ -18,9 +18,15 @@ if (module === require.main) {
     let players = parseInt(args[1]) || 4;
     let shuffled = shuffle(shorts.slice(), seed);
     let cards = Array.from(Array(players), _ => []);
-    for (let cid = 0; cid < 7; cid++) {
+    for (let cid = 0; cid < 2; cid++) {
         for (let pid = 0; pid < players; pid++) {
             cards[pid].push(shuffled.pop());
+        }
+    }
+    for (let cid = 0; cid < 5; cid++) {
+        const c = shuffled.pop();
+        for (let pid = 0; pid < players; pid++) {
+            cards[pid].push(c);
         }
     }
     let histogram = new Map();

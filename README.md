@@ -13,7 +13,7 @@ The `git` command comes from the eponymous program you have installed, while `np
 ## Run
 ```
 $ node skinnyRank.js 7
-$ node histogramBinfile.js 2 3 4 5 6
+$ node histogramBinfile.js --max-old-space-size=4096 2 3 4 5 6
 $ node deal.js 0
 ```
 This will:

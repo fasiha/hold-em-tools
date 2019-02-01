@@ -1,4 +1,4 @@
-import {appendFile as appendFileCb, readFileSync, writeFileSync} from 'fs';
+import {appendFile as appendFileCb, readFileSync, renameSync, writeFileSync} from 'fs';
 import pify from 'pify';
 
 import {combinations} from './comb';
@@ -14,7 +14,7 @@ function searchBufBigN(buf: Buffer, r: number, npocket: number, verbose: boolean
   let str2nums: Map<string, number>[] = Array.from(Array(shorts.length), _ => new Map());
   let totalCombinations = 0;
   for (let pocket of combinations(shorts, npocket)) {
-    str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), totalCombinations);
+    str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), 10 * totalCombinations);
     if ((++totalCombinations) % 1e5 === 0 && verbose) {
       process.stdout.write((totalCombinations / 1e6).toString() + ' ');
     }
@@ -54,17 +54,19 @@ if (require.main === module) {
     let args = process.argv.slice(2).map(n => parseInt(n));
     for (let npocket of args) {
       const fname = `map-r-${r}-n-${npocket}.ldjson`;
-      writeFileSync(fname, "");
+      const fnameTemp = fname + '_' + Math.random().toString(36).slice(2);
+      writeFileSync(fnameTemp, "");
 
       let strings: string[] = [];
       for (let kv of searchBufBigN(buf, r, npocket, true)) {
         if (strings.length === 1000) {
-          await appendFile(fname, strings.join('\n') + '\n');
+          await appendFile(fnameTemp, strings.join('\n') + '\n');
           strings = [];
         }
         strings.push(JSON.stringify(kv));
       }
-      await appendFile(fname, strings.join('\n'));
+      await appendFile(fnameTemp, strings.join('\n'));
+      renameSync(fnameTemp, fname);
     }
   })();
 }

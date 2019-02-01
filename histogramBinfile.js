@@ -26,7 +26,7 @@ function searchBufBigN(buf, r, npocket, verbose = false) {
     let str2nums = Array.from(Array(shorts.length), _ => new Map());
     let totalCombinations = 0;
     for (let pocket of comb_1.combinations(shorts, npocket)) {
-        str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), totalCombinations);
+        str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), 10 * totalCombinations);
         if ((++totalCombinations) % 1e5 === 0 && verbose) {
             process.stdout.write((totalCombinations / 1e6).toString() + ' ');
         }
@@ -67,16 +67,18 @@ if (require.main === module) {
         let args = process.argv.slice(2).map(n => parseInt(n));
         for (let npocket of args) {
             const fname = `map-r-${r}-n-${npocket}.ldjson`;
-            fs_1.writeFileSync(fname, "");
+            const fnameTemp = fname + '_' + Math.random().toString(36).slice(2);
+            fs_1.writeFileSync(fnameTemp, "");
             let strings = [];
             for (let kv of searchBufBigN(buf, r, npocket, true)) {
                 if (strings.length === 1000) {
-                    yield appendFile(fname, strings.join('\n') + '\n');
+                    yield appendFile(fnameTemp, strings.join('\n') + '\n');
                     strings = [];
                 }
                 strings.push(JSON.stringify(kv));
             }
-            yield appendFile(fname, strings.join('\n'));
+            yield appendFile(fnameTemp, strings.join('\n'));
+            fs_1.renameSync(fnameTemp, fname);
         }
     }))();
 }
