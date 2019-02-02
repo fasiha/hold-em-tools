@@ -15,6 +15,7 @@
     "@types/leveldown": "^4.0.0",
     "@types/levelup": "^3.1.0",
     "@types/node": "^10.12.18",
+    "@types/node-fetch": "^2.1.4",
     "@types/pify": "^3.0.2",
     "tape": "^4.9.2",
     "typescript": "^3.2.4"
@@ -25,6 +26,7 @@
     "leveldown": "^4.0.1",
     "levelup": "^4.0.0",
     "linerstream": "^0.2.0",
+    "node-fetch": "^2.3.0",
     "pify": "^4.0.1"
   }
 }

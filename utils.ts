@@ -180,3 +180,5 @@ export function ncr(n: number, r: number): number {
   for (let i = 0; i < r; i++) { ret *= (n - i) / (1 + i); }
   return ret;
 }
+
+export function sum(arr: number[]): number { return arr.reduce((o, n) => o + n); }

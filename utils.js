@@ -208,3 +208,5 @@ function ncr(n, r) {
     return ret;
 }
 exports.ncr = ncr;
+function sum(arr) { return arr.reduce((o, n) => o + n); }
+exports.sum = sum;

@@ -1,64 +1,91 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = require("fs");
+const node_fetch_1 = __importDefault(require("node-fetch"));
 var shuffle = require('knuth-shuffle-seeded');
 const skinnyRank_1 = require("./skinnyRank");
+const utils_1 = require("./utils");
 const { shorts } = skinnyRank_1.initCards();
-const score2string = new Map('rf,sf,quad,fh,fl,str,trip,twop,pair,hic'.split(',').map((s, i) => [i + 1, s]));
+const score2string = new Map('roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',').map((s, i) => [i + 1, s]));
+function sortShorts(hand, ascending = true) {
+    return hand.sort((a, b) => (ascending ? 1 : -1) * (skinnyRank_1.shortToNumberAcesHigh(a) - skinnyRank_1.shortToNumberAcesHigh(b)));
+}
 function string2readable(hand, sort = false, ascending = true) {
     let a = hand.split('');
     if (sort) {
-        a.sort((a, b) => (ascending ? 1 : -1) * (skinnyRank_1.shortToNumberAcesHigh(a) - skinnyRank_1.shortToNumberAcesHigh(b)));
+        sortShorts(a, ascending);
     }
-    return a.map(skinnyRank_1.shortToReadable).join(' ');
+    return a.map(skinnyRank_1.shortToReadable).join('');
+}
+function fmt(n) {
+    if (n < .01) {
+        return (n * 100).toExponential(0);
+    }
+    return (n * 100).toFixed(1);
+}
+function prefixScan(arr, init = 1) {
+    return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
+}
+function leftpad(str, desiredLen, padChar = ' ') {
+    return padChar.repeat(desiredLen - str.length) + str;
+}
+function markdownTable(arr) {
+    let cols = arr[0].length;
+    let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
+    return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
+        .join('\n');
 }
 if (module === require.main) {
-    let args = process.argv.slice(2);
-    let seed = parseInt(args[0]) || 0;
-    let players = parseInt(args[1]) || 4;
-    let shuffled = shuffle(shorts.slice(), seed);
-    let cards = Array.from(Array(players), _ => []);
-    for (let cid = 0; cid < 2; cid++) {
-        for (let pid = 0; pid < players; pid++) {
-            cards[pid].push(shuffled.pop());
-        }
-    }
-    for (let cid = 0; cid < 5; cid++) {
-        const c = shuffled.pop();
-        for (let pid = 0; pid < players; pid++) {
-            cards[pid].push(c);
-        }
-    }
-    let histogram = new Map();
-    try {
-        let rows = fs_1.readFileSync('map-r-7-n-2.ldjson', 'utf8').trim().split('\n').map(s => JSON.parse(s));
-        histogram.set(2, new Map(rows));
-    }
-    catch (e) {
-        console.error('n=2 file not found. Skipping.', e);
-    }
-    let hands = cards
-        .map((v, pid) => {
-        const initial = v.slice();
-        const hand = v.sort().join('');
-        return { pid, hand, initial };
-    })
-        .sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand))
-        .map(({ pid, hand, initial }) => {
-        const score = score2string.get(skinnyRank_1.fastScore(hand));
-        const readable = [
-            string2readable(initial.slice(0, 2).join(''), true, false),
-            string2readable(initial.slice(2).join(''), true)
-        ].join(' | ');
-        let printable = `Player ${pid + 1}: ${readable} :: ${score}`;
-        if (histogram.has(2)) {
-            let h = histogram.get(2);
-            if (h) {
-                let hist = h.get(initial.slice(0, 2).sort().join('')) || [];
-                printable += ` :: Histogram: [${hist.join(', ')}]`;
+    (() => __awaiter(this, void 0, void 0, function* () {
+        let args = process.argv.slice(2);
+        let seed = parseInt(args[0]) || 0;
+        let players = parseInt(args[1]) || 4;
+        let shuffled = shuffle(shorts.slice(), seed);
+        let cards = Array.from(Array(players), _ => []);
+        for (let cid = 0; cid < 2; cid++) {
+            for (let pid = 0; pid < players; pid++) {
+                cards[pid].push(shuffled.pop());
             }
         }
-        return printable;
-    });
-    console.log(hands.join('\n'));
+        for (let cid = 0; cid < 5; cid++) {
+            const c = shuffled.pop();
+            for (let pid = 0; pid < players; pid++) {
+                cards[pid].push(c);
+            }
+        }
+        let objects = cards.map((v, pid) => {
+            const initial = sortShorts(v.slice(0, 2)).concat(v.slice(2));
+            const hand = v.slice().sort().join('');
+            return { pid, hand, initial };
+        });
+        objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
+        for (const { pid, hand, initial } of objects) {
+            const score = score2string.get(skinnyRank_1.fastScore(hand));
+            const readable = [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(' | ');
+            // console.log(pid, initial, readable, score);
+            console.log(`\n# Player ${pid + 1} :: ${readable} :: ${score}`);
+            let cum = prefixScan(initial.slice(0, 6), 2);
+            let table = [];
+            for (const subhand of cum) {
+                const sortedHand = subhand.slice().sort().join('');
+                try {
+                    let [_, arr] = yield (node_fetch_1.default('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
+                    let tot = utils_1.sum(arr);
+                    table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
+                }
+                catch (e) { }
+            }
+            console.log(markdownTable(table));
+        }
+    }))();
 }

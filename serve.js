@@ -81,7 +81,7 @@ if (require.main === module) {
             if ('hand' in req.query) {
                 try {
                     const hit = yield db.get(req.query.hand);
-                    res.json(hit.toString());
+                    res.send(hit.toString());
                 }
                 catch (e) {
                     res.status(404).end();
