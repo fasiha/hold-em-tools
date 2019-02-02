@@ -40,8 +40,8 @@ function fmt(n) {
 function prefixScan(arr, init = 1) {
     return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
 }
-function leftpad(str, desiredLen, padChar = ' ') {
-    return padChar.repeat(Math.max(0, desiredLen - str.length)) + str;
+function pad(str, desiredLen, padChar = ' ', left = true) {
+    return (left ? '' : str) + padChar.repeat(Math.max(0, desiredLen - str.length)) + (left ? str : '');
 }
 function markdownTable(arr, header = []) {
     let cols = arr[0].length;
@@ -52,7 +52,7 @@ function markdownTable(arr, header = []) {
     if (header.length) {
         arr.splice(1, 0, header.map((_, col) => '-'.repeat(widths[col])));
     }
-    return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
+    return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
         .join('\n');
 }
 if (module === require.main) {

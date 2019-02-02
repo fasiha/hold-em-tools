@@ -24,15 +24,15 @@ function fmt(n: number): string {
 function prefixScan<T>(arr: T[], init: number = 1): T[][] {
   return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
 }
-function leftpad(str: string, desiredLen: number, padChar: string = ' ') {
-  return padChar.repeat(Math.max(0, desiredLen - str.length)) + str;
+function pad(str: string, desiredLen: number, padChar: string = ' ', left: boolean = true) {
+  return (left ? '' : str) + padChar.repeat(Math.max(0, desiredLen - str.length)) + (left ? str : '');
 }
 function markdownTable(arr: string[][], header: string[] = []): string {
   let cols = arr[0].length;
   if (header.length) { arr = [header].concat(arr); }
   let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
   if (header.length) { arr.splice(1, 0, header.map((_, col) => '-'.repeat(widths[col]))); }
-  return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
+  return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
       .join('\n');
 }
 if (module === require.main) {
