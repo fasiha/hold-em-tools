@@ -16,7 +16,8 @@ var shuffle = require('knuth-shuffle-seeded');
 const skinnyRank_1 = require("./skinnyRank");
 const utils_1 = require("./utils");
 const { shorts } = skinnyRank_1.initCards();
-const score2string = new Map('roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',').map((s, i) => [i + 1, s]));
+const rankNames = 'roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',');
+const score2string = new Map(rankNames.map((s, i) => [i + 1, s]));
 function sortShorts(hand, ascending = true) {
     return hand.sort((a, b) => (ascending ? 1 : -1) * (skinnyRank_1.shortToNumberAcesHigh(a) - skinnyRank_1.shortToNumberAcesHigh(b)));
 }
@@ -28,6 +29,9 @@ function string2readable(hand, sort = false, ascending = true) {
     return a.map(skinnyRank_1.shortToReadable).join('');
 }
 function fmt(n) {
+    if (n === 0) {
+        return '0';
+    }
     if (n < .01) {
         return (n * 100).toExponential(0);
     }
@@ -37,11 +41,14 @@ function prefixScan(arr, init = 1) {
     return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
 }
 function leftpad(str, desiredLen, padChar = ' ') {
-    return padChar.repeat(desiredLen - str.length) + str;
+    return padChar.repeat(Math.max(0, desiredLen - str.length)) + str;
 }
-function markdownTable(arr) {
+function markdownTable(arr, header = []) {
     let cols = arr[0].length;
     let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
+    if (header.length) {
+        arr = [header, header.map((_, col) => '-'.repeat(widths[col]))].concat(arr);
+    }
     return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
         .join('\n');
 }
@@ -72,8 +79,7 @@ if (module === require.main) {
         for (const { pid, hand, initial } of objects) {
             const score = score2string.get(skinnyRank_1.fastScore(hand));
             const readable = [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(' | ');
-            // console.log(pid, initial, readable, score);
-            console.log(`\n# Player ${pid + 1} :: ${readable} :: ${score}`);
+            console.log(`\n### Seat ${pid + 1} :: ${readable} :: ${score}`);
             let cum = prefixScan(initial.slice(0, 6), 2);
             let table = [];
             for (const subhand of cum) {
@@ -85,7 +91,7 @@ if (module === require.main) {
                 }
                 catch (e) { }
             }
-            console.log(markdownTable(table));
+            console.log(markdownTable(table, ['hand'].concat(rankNames)));
         }
     }))();
 }

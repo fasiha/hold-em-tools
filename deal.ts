@@ -6,8 +6,8 @@ import {shortToReadable, shortToNumberAcesHigh, fastScore, compareHands, initCar
 import {sum} from './utils';
 const {shorts} = initCards();
 
-const score2string: Map<number, string> = new Map(
-    'roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',').map((s, i) => [i + 1, s] as [number, string]));
+const rankNames = 'roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',');
+const score2string: Map<number, string> = new Map(rankNames.map((s, i) => [i + 1, s] as [number, string]));
 function sortShorts(hand: string[], ascending: boolean = true): string[] {
   return hand.sort((a, b) => (ascending ? 1 : -1) * (shortToNumberAcesHigh(a) - shortToNumberAcesHigh(b)));
 }
@@ -17,6 +17,7 @@ function string2readable(hand: string, sort: boolean = false, ascending: boolean
   return a.map(shortToReadable).join('');
 }
 function fmt(n: number): string {
+  if (n === 0) { return '0'; }
   if (n < .01) { return (n * 100).toExponential(0); }
   return (n * 100).toFixed(1);
 }
@@ -24,11 +25,12 @@ function prefixScan<T>(arr: T[], init: number = 1): T[][] {
   return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
 }
 function leftpad(str: string, desiredLen: number, padChar: string = ' ') {
-  return padChar.repeat(desiredLen - str.length) + str;
+  return padChar.repeat(Math.max(0, desiredLen - str.length)) + str;
 }
-function markdownTable(arr: string[][]): string {
+function markdownTable(arr: string[][], header: string[] = []): string {
   let cols = arr[0].length;
   let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
+  if (header.length) { arr = [header, header.map((_, col) => '-'.repeat(widths[col]))].concat(arr); }
   return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
       .join('\n');
 }
@@ -59,8 +61,7 @@ if (module === require.main) {
           [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(
               ' | ');
 
-      // console.log(pid, initial, readable, score);
-      console.log(`\n# Player ${pid + 1} :: ${readable} :: ${score}`);
+      console.log(`\n### Seat ${pid + 1} :: ${readable} :: ${score}`);
 
       let cum = prefixScan(initial.slice(0, 6), 2);
       let table: string[][] = [];
@@ -73,7 +74,7 @@ if (module === require.main) {
           table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
         } catch (e) {}
       }
-      console.log(markdownTable(table));
+      console.log(markdownTable(table, ['hand'].concat(rankNames)));
     }
   })();
 }
