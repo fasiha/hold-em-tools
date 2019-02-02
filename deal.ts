@@ -29,8 +29,9 @@ function leftpad(str: string, desiredLen: number, padChar: string = ' ') {
 }
 function markdownTable(arr: string[][], header: string[] = []): string {
   let cols = arr[0].length;
+  if (header.length) { arr = [header].concat(arr); }
   let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
-  if (header.length) { arr = [header, header.map((_, col) => '-'.repeat(widths[col]))].concat(arr); }
+  if (header.length) { arr.splice(1, 0, header.map((_, col) => '-'.repeat(widths[col]))); }
   return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
       .join('\n');
 }
@@ -61,20 +62,32 @@ if (module === require.main) {
           [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(
               ' | ');
 
-      console.log(`\n### Seat ${pid + 1} :: ${readable} :: ${score}`);
+      console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
 
-      let cum = prefixScan(initial.slice(0, 6), 2);
-      let table: string[][] = [];
-      for (const subhand of cum) {
-        const sortedHand = subhand.slice().sort().join('');
-        try {
-          let [_, arr]: [string, number[]] =
-              await (fetch('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
-          let tot = sum(arr);
-          table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
-        } catch (e) {}
-      }
+      let table: string[][] = await handsToTable(prefixScan(initial.slice(0, 6), 2))
       console.log(markdownTable(table, ['hand'].concat(rankNames)));
     }
+    // board: "audience" view
+    {
+      const board = cards[0].slice(2);
+      let table: string[][] = await handsToTable(prefixScan(board, 3))
+      console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
+      console.log(markdownTable(table, ['board'].concat(rankNames)));
+    }
   })();
+}
+
+function makeheader(text: string): string { return `\n### ${text}`; }
+
+async function handsToTable(hands: string[][]) {
+  let table: string[][] = [];
+  for (const subhand of hands) {
+    const sortedHand = subhand.slice().sort().join('');
+    try {
+      let [_, arr]: [string, number[]] = await (fetch('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
+      let tot = sum(arr);
+      table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
+    } catch (e) {}
+  }
+  return table;
 }

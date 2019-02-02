@@ -45,9 +45,12 @@ function leftpad(str, desiredLen, padChar = ' ') {
 }
 function markdownTable(arr, header = []) {
     let cols = arr[0].length;
+    if (header.length) {
+        arr = [header].concat(arr);
+    }
     let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
     if (header.length) {
-        arr = [header, header.map((_, col) => '-'.repeat(widths[col]))].concat(arr);
+        arr.splice(1, 0, header.map((_, col) => '-'.repeat(widths[col])));
     }
     return arr.map(row => '| ' + row.map((elt, colidx) => leftpad(elt, widths[colidx], ' ')).join(' | ') + ' |')
         .join('\n');
@@ -79,19 +82,32 @@ if (module === require.main) {
         for (const { pid, hand, initial } of objects) {
             const score = score2string.get(skinnyRank_1.fastScore(hand));
             const readable = [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(' | ');
-            console.log(`\n### Seat ${pid + 1} :: ${readable} :: ${score}`);
-            let cum = prefixScan(initial.slice(0, 6), 2);
-            let table = [];
-            for (const subhand of cum) {
-                const sortedHand = subhand.slice().sort().join('');
-                try {
-                    let [_, arr] = yield (node_fetch_1.default('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
-                    let tot = utils_1.sum(arr);
-                    table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
-                }
-                catch (e) { }
-            }
+            console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
+            let table = yield handsToTable(prefixScan(initial.slice(0, 6), 2));
             console.log(markdownTable(table, ['hand'].concat(rankNames)));
         }
+        // board: "audience" view
+        {
+            const board = cards[0].slice(2);
+            let table = yield handsToTable(prefixScan(board, 3));
+            console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
+            console.log(markdownTable(table, ['board'].concat(rankNames)));
+        }
     }))();
+}
+function makeheader(text) { return `\n### ${text}`; }
+function handsToTable(hands) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let table = [];
+        for (const subhand of hands) {
+            const sortedHand = subhand.slice().sort().join('');
+            try {
+                let [_, arr] = yield (node_fetch_1.default('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
+                let tot = utils_1.sum(arr);
+                table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
+            }
+            catch (e) { }
+        }
+        return table;
+    });
 }
