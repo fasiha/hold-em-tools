@@ -37,9 +37,6 @@ function fmt(n) {
     }
     return (n * 100).toFixed(1);
 }
-function prefixScan(arr, init = 1) {
-    return arr.slice(init).reduce((o, n) => o.concat([o[o.length - 1].concat(n)]), [arr.slice(0, init)]);
-}
 function pad(str, desiredLen, padChar = ' ', left = true) {
     return (left ? '' : str) + padChar.repeat(Math.max(0, desiredLen - str.length)) + (left ? str : '');
 }
@@ -83,13 +80,15 @@ if (module === require.main) {
             const score = score2string.get(skinnyRank_1.fastScore(hand));
             const readable = [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(' | ');
             console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
-            let table = yield handsToTable(prefixScan(initial.slice(0, 6), 2));
+            let cumulative = [initial.slice(0, 2), initial.slice(0, 5), initial.slice(0, 6)];
+            let table = yield handsToTable(cumulative);
             console.log(markdownTable(table, ['hand'].concat(rankNames)));
         }
         // board: "audience" view
         {
             const board = cards[0].slice(2);
-            let table = yield handsToTable(prefixScan(board, 3));
+            let cumulative = [board.slice(0, 3), board.slice(0, 4), board.slice()];
+            let table = yield handsToTable(cumulative);
             console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
             console.log(markdownTable(table, ['board'].concat(rankNames)));
         }
@@ -104,7 +103,8 @@ function handsToTable(hands) {
             try {
                 let [_, arr] = yield (node_fetch_1.default('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
                 let tot = utils_1.sum(arr);
-                table.push([string2readable(subhand.join(''))].concat(arr.map(n => fmt(n / tot))));
+                let sub = subhand.join('');
+                table.push([string2readable(sub) + ` (${score2string.get(skinnyRank_1.fastScore(sortedHand))})`].concat(arr.map(n => fmt(n / tot))));
             }
             catch (e) { }
         }
