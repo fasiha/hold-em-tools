@@ -27,6 +27,7 @@ N.B. If you run `$ node deal.js 0` several times, you'll see the exact same deal
 
 Currently, the final printout of the program results in the following Markdown, letting me analyze the probabilities of each final ranking for each player at each stage of the game, while also evaluating each of the *other* players' probabilities by excluding each players' own pocket cards:
 
+### Pockets
 | Pockets %s | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
 | ---------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
 |  2c 6s /hi | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
@@ -34,34 +35,29 @@ Currently, the final printout of the program results in the following Markdown, 
 |  4h 5h /hi | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
 |  Kd 3h /hi | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
 
-#### Pockets + flop
-| Pocket+flop          |   rf |   sf |    qu |  fh |   fl |  st |  tr |    2p |    pa |    hi |
+### Pockets + flop:  Qh 7c Js
+| 5cards %s            |   rf |   sf |    qu |  fh |   fl |  st |  tr |    2p |    pa |    hi |
 | -------------------- | ---- | ---- | ----- | --- | ---- | --- | --- | ----- | ----- | ----- |
-|  2c 6s+ Qh 7c Js /hi | 0÷<1 | 0÷<1 |  0÷<1 | 0÷2 | 0÷<1 | 0÷4 | 1÷4 |  8÷21 | 49÷47 | 41÷21 |
-|  5c Qc+ Qh 7c Js /pa | 0÷<1 | 0÷<1 | <1÷<1 | 2÷1 | 4÷<1 | 0÷4 | 7÷3 | 37÷19 | 50÷48 |  0÷24 |
-|  4h 5h+ Qh 7c Js /hi | 0÷<1 | 0÷<1 |  0÷<1 | 0÷2 | 4÷<1 | 3÷4 | 1÷4 |  8÷21 | 47÷47 | 36÷21 |
-|  Kd 3h+ Qh 7c Js /hi | 0÷<1 | 0÷<1 |  0÷<1 | 0÷2 | 0÷<1 | 3÷4 | 1÷4 |  8÷21 | 49÷47 | 38÷22 |
+|  2c 6s× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×<1 | 0×4 | 1×4 |  8×21 | 49×47 | 41×21 |
+|  5c Qc× Qh 7c Js /pa | 0×<1 | 0×<1 | <1×<1 | 2×1 | 4×<1 | 0×4 | 7×3 | 37×19 | 50×48 |  0×24 |
+|  4h 5h× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 4×<1 | 3×4 | 1×4 |  8×21 | 47×47 | 36×21 |
+|  Kd 3h× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×<1 | 3×4 | 1×4 |  8×21 | 49×47 | 38×22 |
 
-### Pockets + flop + turn
-| Pocket+flop+turn %s     |  rf |   sf |   qu |   fh |    fl |  st |  tr |    2p |    pa |    hi |
+### Pockets + flop + turn:  Qh 7c Js 4c
+| 6cards %s               |  rf |   sf |   qu |   fh |    fl |  st |  tr |    2p |    pa |    hi |
 | ----------------------- | --- | ---- | ---- | ---- | ----- | --- | --- | ----- | ----- | ----- |
-|  2c 6s+ Qh 7c Js 4c /hi | 0÷0 | 0÷<1 | 0÷<1 | 0÷<1 |  0÷<1 | 0÷2 | 0÷3 |  0÷17 | 39÷50 | 61÷27 |
-|  5c Qc+ Qh 7c Js 4c /pa | 0÷0 |  0÷0 | 0÷<1 | 0÷<1 | 20÷<1 | 0÷2 | 4÷3 | 24÷15 | 52÷50 |  0÷30 |
-|  4h 5h+ Qh 7c Js 4c /pa | 0÷0 | 0÷<1 | 0÷<1 | 0÷<1 |   0÷1 | 0÷2 | 4÷3 | 26÷15 | 70÷49 |  0÷30 |
-|  Kd 3h+ Qh 7c Js 4c /hi | 0÷0 | 0÷<1 | 0÷<1 | 0÷<1 |   0÷1 | 0÷2 | 0÷3 |  0÷17 | 39÷50 | 61÷27 |
+|  2c 6s× Qh 7c Js 4c /hi | 0×0 | 0×<1 | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×3 |  0×17 | 39×50 | 61×27 |
+|  5c Qc× Qh 7c Js 4c /pa | 0×0 |  0×0 | 0×<1 | 0×<1 | 20×<1 | 0×2 | 4×3 | 24×15 | 52×50 |  0×30 |
+|  4h 5h× Qh 7c Js 4c /pa | 0×0 | 0×<1 | 0×<1 | 0×<1 |   0×1 | 0×2 | 4×3 | 26×15 | 70×49 |  0×30 |
+|  Kd 3h× Qh 7c Js 4c /hi | 0×0 | 0×<1 | 0×<1 | 0×<1 |   0×1 | 0×2 | 0×3 |  0×17 | 39×50 | 61×27 |
 
-### Final
-| Final board %s       | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
-| -------------------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-|  Qh 7c Js 4c 3d (hi) |  0 |  0 |  0 |  0 |  0 |  1 |  1 |  8 | 49 | 40 |
-
-#### Board minus each player's pocket ≈%s
-| Board-pocket                         | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
-| ------------------------------------ | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-|  Qh 7c Js 4c 3d (minus:  2c 6s) (hi) |  0 |  0 |  0 |  0 |  0 |  1 |  2 |  9 | 50 | 38 |
-|  Qh 7c Js 4c 3d (minus:  5c Qc) (hi) |  0 |  0 |  0 |  0 |  0 |  1 |  1 |  8 | 48 | 41 |
-|  Qh 7c Js 4c 3d (minus:  4h 5h) (hi) |  0 |  0 |  0 |  0 |  0 |  1 |  1 |  8 | 48 | 41 |
-|  Qh 7c Js 4c 3d (minus:  Kd 3h) (hi) |  0 |  0 |  0 |  0 |  0 |  2 |  1 |  8 | 48 | 41 |
+### Flop + turn + river:  Qh 7c Js 4c 3d
+| 7cards ≈%s                 | rf | sf | qu | fh | fl | st | tr | 2p |  pa |  hi |
+| -------------------------- | -- | -- | -- | -- | -- | -- | -- | -- | --- | --- |
+|  2c 6s× Qh 7c Js 4c 3d /hi | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×2 | ×9 | ×50 | ×38 |
+|  5c Qc× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×1 | ×8 | ×48 | ×41 |
+|  4h 5h× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×1 | ×8 | ×48 | ×41 |
+|  Kd 3h× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×2 | ×1 | ×8 | ×48 | ×41 |
 1. Player 2 ::  5c Qc |  Qh 7c Js 4c 3d => pa
 2. Player 3 ::  4h 5h |  Qh 7c Js 4c 3d => pa
 3. Player 4 ::  Kd 3h |  Qh 7c Js 4c 3d => pa
