@@ -25,39 +25,53 @@ This will:
 
 N.B. If you run `$ node deal.js 0` several times, you'll see the exact same deal. If you want to shuffle and redeal, change the `0` to another number: this number is the random seed.
 
-Currently, the final printout of the program results in the following Markdown, letting me analyze the probabilities of each final ranking for each player at each stage of the game, while also evaluating each of the *other* players' probabilities by excluding each players' own pocket cards:
+Currently, the final printout of the program results in the following Markdown, letting me analyze each player's hand, starting with their two pocket cards, then the board as it gets dealt out. At each point in the game, I can see both (1) the histogram of rankings based on all the cards I can see (my pocket cards and the board) as well as (2) the histogram of other players based on only the board. These two are separated by ×, so a cell in the table below, “8×21” for player 1 after seeing the flop in the “2p” (two-pairs) means, of the five cards they have, there is 8% chance that they'll end up with a two-pair at the end of the game, ***but*** there's a 21% chance that another player might get a two-pair, based on just the board so far.
 
-### Pockets
-| Pockets %s | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
-| ---------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-|  2c 6s /hi | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  5c Qc /hi | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  4h 5h /hi | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  Kd 3h /hi | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
+The abbreviations I use are:
+- rf, royal flush
+- sf, straight flush
+- qu, “quad” or four-of-a-kind
+- fh, full house
+- fl, flush
+- st, straight
+- tr, “trip” or three-of-a-kind
+- 2p, two pairs
+- pa, one pair
+- hi, high card
 
-### Pockets + flop:  Qh 7c Js
-| 5cards %s            |   rf |   sf |    qu |  fh |   fl |  st |  tr |    2p |    pa |    hi |
-| -------------------- | ---- | ---- | ----- | --- | ---- | --- | --- | ----- | ----- | ----- |
-|  2c 6s× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×<1 | 0×4 | 1×4 |  8×21 | 49×47 | 41×21 |
-|  5c Qc× Qh 7c Js /pa | 0×<1 | 0×<1 | <1×<1 | 2×1 | 4×<1 | 0×4 | 7×3 | 37×19 | 50×48 |  0×24 |
-|  4h 5h× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 4×<1 | 3×4 | 1×4 |  8×21 | 47×47 | 36×21 |
-|  Kd 3h× Qh 7c Js /hi | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×<1 | 3×4 | 1×4 |  8×21 | 49×47 | 38×22 |
+### Player 1
+| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |   2p |    pa |    hi |
+| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ---- | ----- | ----- |
+|  2c 6s = hi                 |   <1 |   <1 |   <1 |    2 |    2 |   4 |   4 |   23 |    45 |    19 |
+|  2c 6s× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 0×<1 | 0×4 | 1×4 | 8×21 | 49×47 | 41×21 |
+|  2c 6s× Qh 7c Js 4c = hi    |  0×0 | 0×<1 | 0×<1 | 0×<1 | 0×<1 | 0×2 | 0×3 | 0×17 | 39×50 | 61×27 |
+|  2c 6s× Qh 7c Js 4c 3d = hi |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×1 |  ×2 |   ×9 |   ×50 |   ×38 |
 
-### Pockets + flop + turn:  Qh 7c Js 4c
-| 6cards %s               |  rf |   sf |   qu |   fh |    fl |  st |  tr |    2p |    pa |    hi |
-| ----------------------- | --- | ---- | ---- | ---- | ----- | --- | --- | ----- | ----- | ----- |
-|  2c 6s× Qh 7c Js 4c /hi | 0×0 | 0×<1 | 0×<1 | 0×<1 |  0×<1 | 0×2 | 0×3 |  0×17 | 39×50 | 61×27 |
-|  5c Qc× Qh 7c Js 4c /pa | 0×0 |  0×0 | 0×<1 | 0×<1 | 20×<1 | 0×2 | 4×3 | 24×15 | 52×50 |  0×30 |
-|  4h 5h× Qh 7c Js 4c /pa | 0×0 | 0×<1 | 0×<1 | 0×<1 |   0×1 | 0×2 | 4×3 | 26×15 | 70×49 |  0×30 |
-|  Kd 3h× Qh 7c Js 4c /hi | 0×0 | 0×<1 | 0×<1 | 0×<1 |   0×1 | 0×2 | 0×3 |  0×17 | 39×50 | 61×27 |
+### Player 2
+| Percents                    |   rf |   sf |    qu |   fh |    fl |  st |  tr |    2p |    pa |   hi |
+| --------------------------- | ---- | ---- | ----- | ---- | ----- | --- | --- | ----- | ----- | ---- |
+|  5c Qc = hi                 |   <1 |   <1 |    <1 |    2 |     7 |   3 |   4 |    22 |    43 |   18 |
+|  5c Qc× Qh 7c Js = pa       | 0×<1 | 0×<1 | <1×<1 |  2×1 |  4×<1 | 0×4 | 7×3 | 37×19 | 50×48 | 0×24 |
+|  5c Qc× Qh 7c Js 4c = pa    |  0×0 |  0×0 |  0×<1 | 0×<1 | 20×<1 | 0×2 | 4×3 | 24×15 | 52×50 | 0×30 |
+|  5c Qc× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |    ×0 |   ×0 |    ×0 |  ×1 |  ×1 |    ×8 |   ×48 |  ×41 |
 
-### Flop + turn + river:  Qh 7c Js 4c 3d
-| 7cards ≈%s                 | rf | sf | qu | fh | fl | st | tr | 2p |  pa |  hi |
-| -------------------------- | -- | -- | -- | -- | -- | -- | -- | -- | --- | --- |
-|  2c 6s× Qh 7c Js 4c 3d /hi | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×2 | ×9 | ×50 | ×38 |
-|  5c Qc× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×1 | ×8 | ×48 | ×41 |
-|  4h 5h× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×1 | ×1 | ×8 | ×48 | ×41 |
-|  Kd 3h× Qh 7c Js 4c 3d /pa | ×0 | ×0 | ×0 | ×0 | ×0 | ×2 | ×1 | ×8 | ×48 | ×41 |
+### Player 3
+| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |    2p |    pa |    hi |
+| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ----- | ----- | ----- |
+|  4h 5h = hi                 |   <1 |   <1 |   <1 |    2 |    6 |   9 |   4 |    22 |    41 |    16 |
+|  4h 5h× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 4×<1 | 3×4 | 1×4 |  8×21 | 47×47 | 36×21 |
+|  4h 5h× Qh 7c Js 4c = pa    |  0×0 | 0×<1 | 0×<1 | 0×<1 |  0×1 | 0×2 | 4×3 | 26×15 | 70×49 |  0×30 |
+|  4h 5h× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×1 |  ×1 |    ×8 |   ×48 |   ×41 |
+
+### Player 4
+| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |   2p |    pa |    hi |
+| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ---- | ----- | ----- |
+|  Kd 3h = hi                 |   <1 |   <1 |   <1 |    2 |    2 |   2 |   4 |   23 |    46 |    20 |
+|  Kd 3h× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 0×<1 | 3×4 | 1×4 | 8×21 | 49×47 | 38×22 |
+|  Kd 3h× Qh 7c Js 4c = hi    |  0×0 | 0×<1 | 0×<1 | 0×<1 |  0×1 | 0×2 | 0×3 | 0×17 | 39×50 | 61×27 |
+|  Kd 3h× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×2 |  ×1 |   ×8 |   ×48 |   ×41 |
+
+### Finally
 1. Player 2 ::  5c Qc |  Qh 7c Js 4c 3d => pa
 2. Player 3 ::  4h 5h |  Qh 7c Js 4c 3d => pa
 3. Player 4 ::  Kd 3h |  Qh 7c Js 4c 3d => pa

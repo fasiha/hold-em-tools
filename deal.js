@@ -69,14 +69,15 @@ function handsToTableCombine(hands) {
                 let arrOthers = normalize(yield handToFrequencyExclusion(board, pocket));
                 let numbers = arrOthers.map((o, i) => (i in arrMine ? fmt(arrMine[i]) : '') + `×${fmt(o)}`);
                 let row = [
-                    (string2readable(pocket) + '×' + string2readable(board)) + ' /' + score2string.get(skinnyRank_1.fastScore(shand)), ...numbers
+                    (string2readable(pocket) + '×' + string2readable(board)) + ' = ' + score2string.get(skinnyRank_1.fastScore(shand)),
+                    ...numbers
                 ];
                 table.push(row);
             }
             else {
                 let arrMine = normalize(yield handToFrequencyExclusion(hand.join('')));
                 let numbers = arrMine.map(fmt);
-                let row = [string2readable(shand) + ' /' + score2string.get(skinnyRank_1.fastScore(shand)), ...numbers];
+                let row = [string2readable(shand) + ' = ' + score2string.get(skinnyRank_1.fastScore(shand)), ...numbers];
                 table.push(row);
             }
         }
@@ -116,15 +117,6 @@ function handToFrequencyExclusion(hand, exclude = '') {
 }
 function printRealtime(cards) {
     return __awaiter(this, void 0, void 0, function* () {
-        let n = 2;
-        console.log(makeheader('Pockets'));
-        console.log(markdownTable(yield handsToTableCombine(cards.map(hand => hand.slice(0, 2))), ['Pockets %s'].concat(rankNames)));
-        n = 5;
-        console.log(makeheader('Pockets + flop: ' + string2readable(cards[0].slice(2, n).join(''))));
-        console.log(markdownTable(yield handsToTableCombine(cards.map(hand => hand.slice(0, n))), ['5cards %s'].concat(rankNames)));
-        n = 6;
-        console.log(makeheader('Pockets + flop + turn: ') + string2readable(cards[0].slice(2, n).join('')));
-        console.log(markdownTable(yield handsToTableCombine(cards.map(hand => hand.slice(0, n))), ['6cards %s'].concat(rankNames)));
         let objects = cards.map((v, pid) => {
             const initial = v.slice();
             const hand = v.slice().sort().join('');
@@ -133,11 +125,11 @@ function printRealtime(cards) {
             return { pid, hand, scoren, score, initial };
         });
         objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
-        n = 7;
-        console.log(makeheader('Flop + turn + river: ' + string2readable(cards[0].slice(2, n).join(''))));
-        // console.log(markdownTable(await handsToTable([cards[0].slice(2)]), ['Final board %s'].concat(rankNames)));
-        // console.log(makeheader('Board minus each player\'s pocket ≈%s', 4));
-        console.log(markdownTable(yield handsToTableCombine(cards.map(hand => hand.slice(0, n))), ['7cards ≈%s'].concat(rankNames)));
+        for (let [hid, hand] of utils_1.enumerate(cards)) {
+            console.log(makeheader(`Player ${hid + 1}`));
+            console.log(markdownTable(yield handsToTableCombine([2, 5, 6, 7].map(n => hand.slice(0, n))), [`Percents`].concat(rankNames)));
+        }
+        console.log(makeheader('Finally'));
         console.log(objects
             .map((o, i) => `${i + 1}. Player ${o.pid + 1} :: ${string2readable(o.initial.slice(0, 2).sort().join(''))} | ${string2readable(o.initial.slice(2).join(''))} => ${o.score}`)
             .join('\n'));
