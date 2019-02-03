@@ -52,24 +52,8 @@ function markdownTable(arr, header = []) {
     return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
         .join('\n');
 }
-if (module === require.main) {
-    (() => __awaiter(this, void 0, void 0, function* () {
-        let args = process.argv.slice(2);
-        let seed = parseInt(args[0]) || 0;
-        let players = parseInt(args[1]) || 4;
-        let shuffled = shuffle(shorts.slice(), seed);
-        let cards = Array.from(Array(players), _ => []);
-        for (let cid = 0; cid < 2; cid++) {
-            for (let pid = 0; pid < players; pid++) {
-                cards[pid].push(shuffled.pop());
-            }
-        }
-        for (let cid = 0; cid < 5; cid++) {
-            const c = shuffled.pop();
-            for (let pid = 0; pid < players; pid++) {
-                cards[pid].push(c);
-            }
-        }
+function printResult(cards) {
+    return __awaiter(this, void 0, void 0, function* () {
         let objects = cards.map((v, pid) => {
             const initial = sortShorts(v.slice(0, 2)).concat(v.slice(2));
             const hand = v.slice().sort().join('');
@@ -92,9 +76,9 @@ if (module === require.main) {
             console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
             console.log(markdownTable(table, ['board'].concat(rankNames)));
         }
-    }))();
+    });
 }
-function makeheader(text) { return `\n### ${text}`; }
+function makeheader(text, level = 3) { return `\n${'#'.repeat(level)} ${text}`; }
 function handsToTable(hands) {
     return __awaiter(this, void 0, void 0, function* () {
         let table = [];
@@ -110,4 +94,59 @@ function handsToTable(hands) {
         }
         return table;
     });
+}
+function printRealtime(cards) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // print each pocket & rating
+        // then print pockets+flop, and flop
+        // then pockets+flop+turn, and flop+turn
+        // etc. with the river
+        let n = 2;
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, 2))), ['Pockets'].concat(rankNames)));
+        n = 5;
+        console.log(makeheader('Pockets + flop'));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pockets+flop'].concat(rankNames)));
+        console.log(makeheader('(Just flop)', 4));
+        console.log(markdownTable(yield handsToTable([cards[0].slice(2, n)]), ['(Flop)'].concat(rankNames)));
+        n = 6;
+        console.log(makeheader('Pockets + flop + turn'));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pocket+flop+turn'].concat(rankNames)));
+        console.log(makeheader('(Just flop+turn)', 4));
+        console.log(markdownTable(yield handsToTable([cards[0].slice(2, n)]), ['(flop+turn)'].concat(rankNames)));
+        let objects = cards.map((v, pid) => {
+            const initial = v.slice();
+            const hand = v.slice().sort().join('');
+            const scoren = skinnyRank_1.fastScore(hand);
+            const score = score2string.get(scoren);
+            return { pid, hand, scoren, score, initial };
+        });
+        objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
+        console.log(makeheader('Final'));
+        console.log(markdownTable(yield handsToTable([cards[0].slice(2)]), ['Final board'].concat(rankNames)));
+        console.log(objects
+            .map((o, i) => `${i + 1}. Player ${o.pid + 1} :: ${string2readable(o.initial.slice(0, 2).sort().join(''))} | ${string2readable(o.initial.slice(2).join(''))} => ${o.score}`)
+            .join('\n'));
+    });
+}
+if (module === require.main) {
+    (() => __awaiter(this, void 0, void 0, function* () {
+        let args = process.argv.slice(2);
+        let seed = parseInt(args[0]) || 0;
+        let players = parseInt(args[1]) || 4;
+        let shuffled = shuffle(shorts.slice(), seed);
+        let cards = Array.from(Array(players), _ => []);
+        for (let cid = 0; cid < 2; cid++) {
+            for (let pid = 0; pid < players; pid++) {
+                cards[pid].push(shuffled.pop());
+            }
+        }
+        for (let cid = 0; cid < 5; cid++) {
+            const c = shuffled.pop();
+            for (let pid = 0; pid < players; pid++) {
+                cards[pid].push(c);
+            }
+        }
+        // await printResult(cards);
+        printRealtime(cards);
+    }))();
 }

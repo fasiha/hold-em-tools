@@ -31,6 +31,92 @@ function markdownTable(arr: string[][], header: string[] = []): string {
   return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
       .join('\n');
 }
+async function printResult(cards: string[][]) {
+  let objects = cards.map((v, pid) => {
+    const initial = sortShorts(v.slice(0, 2)).concat(v.slice(2));
+    const hand = v.slice().sort().join('');
+    return {pid, hand, initial};
+  });
+  objects.sort((a, b) => compareHands(a.hand, b.hand));
+  for (const {pid, hand, initial} of objects) {
+    const score = score2string.get(fastScore(hand));
+    const readable =
+        [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(
+            ' | ');
+
+    console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
+
+    let cumulative = [initial.slice(0, 2), initial.slice(0, 5), initial.slice(0, 6)];
+    let table: string[][] = await handsToTable(cumulative)
+    console.log(markdownTable(table, ['hand'].concat(rankNames)));
+  }
+  // board: "audience" view
+  {
+    const board = cards[0].slice(2);
+    let cumulative = [board.slice(0, 3), board.slice(0, 4), board.slice()];
+    let table: string[][] = await handsToTable(cumulative)
+    console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
+    console.log(markdownTable(table, ['board'].concat(rankNames)));
+  }
+}
+
+function makeheader(text: string, level: number = 3): string { return `\n${'#'.repeat(level)} ${text}`; }
+
+async function handsToTable(hands: string[][]) {
+  let table: string[][] = [];
+  for (const subhand of hands) {
+    const sortedHand = subhand.slice().sort().join('');
+    try {
+      let [_, arr]: [string, number[]] = await (fetch('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
+      let tot = sum(arr);
+      let sub = subhand.join('');
+      table.push(
+          [string2readable(sub) + ` (${score2string.get(fastScore(sortedHand))})`].concat(arr.map(n => fmt(n / tot))));
+    } catch (e) {}
+  }
+  return table;
+}
+
+async function printRealtime(cards: string[][]) {
+  // print each pocket & rating
+  // then print pockets+flop, and flop
+  // then pockets+flop+turn, and flop+turn
+  // etc. with the river
+
+  let n = 2;
+  console.log(markdownTable(await handsToTable(cards.map(hand => hand.slice(0, 2))), ['Pockets'].concat(rankNames)));
+
+  n = 5;
+  console.log(makeheader('Pockets + flop'));
+  console.log(
+      markdownTable(await handsToTable(cards.map(hand => hand.slice(0, n))), ['Pockets+flop'].concat(rankNames)));
+  console.log(makeheader('(Just flop)', 4));
+  console.log(markdownTable(await handsToTable([cards[0].slice(2, n)]), ['(Flop)'].concat(rankNames)));
+
+  n = 6;
+  console.log(makeheader('Pockets + flop + turn'));
+  console.log(
+      markdownTable(await handsToTable(cards.map(hand => hand.slice(0, n))), ['Pocket+flop+turn'].concat(rankNames)));
+  console.log(makeheader('(Just flop+turn)', 4));
+  console.log(markdownTable(await handsToTable([cards[0].slice(2, n)]), ['(flop+turn)'].concat(rankNames)));
+
+  let objects = cards.map((v, pid) => {
+    const initial = v.slice();
+    const hand = v.slice().sort().join('');
+    const scoren = fastScore(hand);
+    const score = score2string.get(scoren);
+    return {pid, hand, scoren, score, initial};
+  });
+  objects.sort((a, b) => compareHands(a.hand, b.hand));
+  console.log(makeheader('Final'))
+  console.log(markdownTable(await handsToTable([cards[0].slice(2)]), ['Final board'].concat(rankNames)));
+  console.log(objects
+                  .map((o, i) => `${i + 1}. Player ${o.pid + 1} :: ${
+                           string2readable(o.initial.slice(0, 2).sort().join(
+                               ''))} | ${string2readable(o.initial.slice(2).join(''))} => ${o.score}`)
+                  .join('\n'));
+}
+
 if (module === require.main) {
   (async () => {
     let args = process.argv.slice(2);
@@ -46,48 +132,7 @@ if (module === require.main) {
       for (let pid = 0; pid < players; pid++) { cards[pid].push(c); }
     }
 
-    let objects = cards.map((v, pid) => {
-      const initial = sortShorts(v.slice(0, 2)).concat(v.slice(2));
-      const hand = v.slice().sort().join('');
-      return {pid, hand, initial};
-    });
-    objects.sort((a, b) => compareHands(a.hand, b.hand));
-    for (const {pid, hand, initial} of objects) {
-      const score = score2string.get(fastScore(hand));
-      const readable =
-          [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(
-              ' | ');
-
-      console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
-
-      let cumulative = [initial.slice(0, 2), initial.slice(0, 5), initial.slice(0, 6)];
-      let table: string[][] = await handsToTable(cumulative)
-      console.log(markdownTable(table, ['hand'].concat(rankNames)));
-    }
-    // board: "audience" view
-    {
-      const board = cards[0].slice(2);
-      let cumulative = [board.slice(0, 3), board.slice(0, 4), board.slice()];
-      let table: string[][] = await handsToTable(cumulative)
-      console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
-      console.log(markdownTable(table, ['board'].concat(rankNames)));
-    }
+    // await printResult(cards);
+    printRealtime(cards);
   })();
-}
-
-function makeheader(text: string): string { return `\n### ${text}`; }
-
-async function handsToTable(hands: string[][]) {
-  let table: string[][] = [];
-  for (const subhand of hands) {
-    const sortedHand = subhand.slice().sort().join('');
-    try {
-      let [_, arr]: [string, number[]] = await (fetch('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
-      let tot = sum(arr);
-      let sub = subhand.join('');
-      table.push(
-          [string2readable(sub) + ` (${score2string.get(fastScore(sortedHand))})`].concat(arr.map(n => fmt(n / tot))));
-    } catch (e) {}
-  }
-  return table;
 }

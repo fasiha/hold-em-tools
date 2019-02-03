@@ -27,37 +27,44 @@ N.B. If you run `$ node deal.js 0` several times, you'll see the exact same deal
 
 Currently, the final printout of the program results in the following Markdown:
 
-### Seat 2 ::  5c Qc |  Qh 7c Js 4c 3d :: pair
-| hand                      | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
-| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-|  5c Qc (hica)             | 2e-3 | 2e-2 | 1e-1 |  2.2 |  6.6 |  3.2 |  4.4 | 22.3 | 43.4 | 17.8 |
-|  5c Qc Qh 7c Js (pair)    |    0 |    0 | 9e-2 |  2.5 |  4.2 |    0 |  6.7 | 36.6 | 50.0 |    0 |
-|  5c Qc Qh 7c Js 4c (pair) |    0 |    0 |    0 |    0 | 19.6 |    0 |  4.3 | 23.9 | 52.2 |    0 |
+| Pockets       | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+| ------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|  2c 6s (hica) | 2e-4 | 2e-2 | 1e-1 |  2.2 |  2.0 |  4.0 |  4.4 | 22.7 | 45.3 | 19.3 |
+|  5c Qc (hica) | 2e-3 | 2e-2 | 1e-1 |  2.2 |  6.6 |  3.2 |  4.4 | 22.3 | 43.4 | 17.8 |
+|  4h 5h (hica) | 2e-4 | 2e-1 | 1e-1 |  2.2 |  6.4 |  8.6 |  4.3 | 21.8 | 40.6 | 15.8 |
+|  Kd 3h (hica) | 2e-3 | 1e-2 | 1e-1 |  2.2 |  2.0 |  2.3 |  4.5 | 22.8 | 46.1 | 20.0 |
 
-### Seat 3 ::  4h 5h |  Qh 7c Js 4c 3d :: pair
-| hand                      | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
-| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-|  4h 5h (hica)             | 2e-4 | 2e-1 | 1e-1 |  2.2 |  6.4 |  8.6 |  4.3 | 21.8 | 40.6 | 15.8 |
-|  4h 5h Qh 7c Js (hica)    |    0 |    0 |    0 |    0 |  4.2 |  2.8 |  1.4 |  8.2 | 47.4 | 36.1 |
-|  4h 5h Qh 7c Js 4c (pair) |    0 |    0 |    0 |    0 |    0 |    0 |  4.3 | 26.1 | 69.6 |    0 |
-
-### Seat 4 ::  3h Kd |  Qh 7c Js 4c 3d :: pair
-| hand                      | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
-| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-|  3h Kd (hica)             | 2e-3 | 1e-2 | 1e-1 |  2.2 |  2.0 |  2.3 |  4.5 | 22.8 | 46.1 | 20.0 |
-|  3h Kd Qh 7c Js (hica)    |    0 |    0 |    0 |    0 |    0 |  3.0 |  1.4 |  8.3 | 48.8 | 38.5 |
-|  3h Kd Qh 7c Js 4c (hica) |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 | 39.1 | 60.9 |
-
-### Seat 1 ::  2c 6s |  Qh 7c Js 4c 3d :: hica
-| hand                      | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
-| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-|  2c 6s (hica)             | 2e-4 | 2e-2 | 1e-1 |  2.2 |  2.0 |  4.0 |  4.4 | 22.7 | 45.3 | 19.3 |
-|  2c 6s Qh 7c Js (hica)    |    0 |    0 |    0 |    0 |    0 |    0 |  1.4 |  8.3 | 48.8 | 41.4 |
-|  2c 6s Qh 7c Js 4c (hica) |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 | 39.1 | 60.9 |
-
-### Board ::  Qh 7c Js 4c 3d
-| board                  | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+### Pockets + flop
+| Pockets+flop           | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
 | ---------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-|  Qh 7c Js (hica)       | 9e-4 | 5e-3 | 7e-2 |  1.5 | 7e-1 |  3.8 |  3.7 | 20.3 | 47.4 | 22.4 |
-|  Qh 7c Js 4c (hica)    |    0 | 1e-2 | 2e-2 | 6e-1 | 9e-1 |  1.8 |  2.7 | 15.6 | 49.5 | 28.8 |
+|  2c 6s Qh 7c Js (hica) |    0 |    0 |    0 |    0 |    0 |    0 |  1.4 |  8.3 | 48.8 | 41.4 |
+|  5c Qc Qh 7c Js (pair) |    0 |    0 | 9e-2 |  2.5 |  4.2 |    0 |  6.7 | 36.6 | 50.0 |    0 |
+|  4h 5h Qh 7c Js (hica) |    0 |    0 |    0 |    0 |  4.2 |  2.8 |  1.4 |  8.2 | 47.4 | 36.1 |
+|  Kd 3h Qh 7c Js (hica) |    0 |    0 |    0 |    0 |    0 |  3.0 |  1.4 |  8.3 | 48.8 | 38.5 |
+
+#### (Just flop)
+| (Flop)           | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+| ---------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|  Qh 7c Js (hica) | 9e-4 | 5e-3 | 7e-2 |  1.5 | 7e-1 |  3.8 |  3.7 | 20.3 | 47.4 | 22.4 |
+
+### Pockets + flop + turn
+| Pocket+flop+turn          | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+| ------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|  2c 6s Qh 7c Js 4c (hica) |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 | 39.1 | 60.9 |
+|  5c Qc Qh 7c Js 4c (pair) |    0 |    0 |    0 |    0 | 19.6 |    0 |  4.3 | 23.9 | 52.2 |    0 |
+|  4h 5h Qh 7c Js 4c (pair) |    0 |    0 |    0 |    0 |    0 |    0 |  4.3 | 26.1 | 69.6 |    0 |
+|  Kd 3h Qh 7c Js 4c (hica) |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 | 39.1 | 60.9 |
+
+#### (Just flop+turn)
+| (flop+turn)         | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+| ------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|  Qh 7c Js 4c (hica) |    0 | 1e-2 | 2e-2 | 6e-1 | 9e-1 |  1.8 |  2.7 | 15.6 | 49.5 | 28.8 |
+
+### Final
+| Final board            | roya | strf | quad | fuho | flus | str8 | trip | twop | pair | hica |
+| ---------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 |  Qh 7c Js 4c 3d (hica) |    0 |    0 |    0 |    0 |    0 |  1.5 |  1.4 |  8.3 | 48.8 | 40.0 |
+1. Player 2 ::  5c Qc |  Qh 7c Js 4c 3d => pair
+2. Player 3 ::  4h 5h |  Qh 7c Js 4c 3d => pair
+3. Player 4 ::  Kd 3h |  Qh 7c Js 4c 3d => pair
+4. Player 1 ::  2c 6s |  Qh 7c Js 4c 3d => hica
