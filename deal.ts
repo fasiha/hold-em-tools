@@ -5,7 +5,7 @@ import {shortToReadable, shortToNumberAcesHigh, fastScore, compareHands, initCar
 import {sum, enumerate} from './utils';
 const {shorts} = initCards();
 
-const rankNames = 'roya,strf,quad,fuho,flus,str8,trip,twop,pair,hica'.split(',');
+const rankNames = 'rf,sf,qu,fh,fl,st,tr,2p,pa,hi'.split(',');
 const score2string: Map<number, string> = new Map(rankNames.map((s, i) => [i + 1, s] as [number, string]));
 function sortShorts(hand: string[], ascending: boolean = true): string[] {
   return hand.sort((a, b) => (ascending ? 1 : -1) * (shortToNumberAcesHigh(a) - shortToNumberAcesHigh(b)));
@@ -17,8 +17,8 @@ function string2readable(hand: string, sort: boolean = false, ascending: boolean
 }
 function fmt(n: number): string {
   if (n === 0) { return '0'; }
-  if (n < .01) { return (n * 100).toExponential(0); }
-  return (n * 100).toFixed(1);
+  if (n < .01) { return '<1'; }
+  return Math.round(n * 100).toString();
 }
 function pad(str: string, desiredLen: number, padChar: string = ' ', left: boolean = true) {
   return (left ? '' : str) + padChar.repeat(Math.max(0, desiredLen - str.length)) + (left ? str : '');
@@ -50,6 +50,33 @@ async function handsToTable(hands: string[][], excludes: string[][] = []) {
   }
   return table;
 }
+async function handsToTableCombine(hands: string[][]) {
+  let table: string[][] = [];
+  const normalize = (arr: number[]) => {
+    const tot = sum(arr);
+    return arr.map(n => n / tot);
+  };
+  for (const hand of hands) {
+    const shand = hand.slice().sort().join('');
+    if (hand.length > 3) {
+      let arrMine = normalize(await handToFrequencyExclusion(shand));
+      let pocket = hand.slice(0, 2).join('');
+      let board = hand.slice(2).join('');
+      let arrOthers = normalize(await handToFrequencyExclusion(board, pocket));
+      let numbers = arrMine.map((mine, i) => fmt(mine) + `÷${fmt(arrOthers[i])}`);
+      let row = [
+        (string2readable(pocket) + '+' + string2readable(board)) + ' /' + score2string.get(fastScore(shand)), ...numbers
+      ];
+      table.push(row);
+    } else {
+      let arrMine = normalize(await handToFrequencyExclusion(hand.join('')));
+      let numbers = arrMine.map(fmt);
+      let row = [string2readable(shand) + ' /' + score2string.get(fastScore(shand)), ...numbers];
+      table.push(row);
+    }
+  }
+  return table;
+}
 
 async function handToFrequency(hand: string) {
   let res = await fetch('http://localhost:3000/?hand=' + hand);
@@ -59,10 +86,10 @@ async function handToFrequency(hand: string) {
 }
 
 async function handToFrequencyExclusion(hand: string, exclude: string = '') {
-  if (!exclude) { return handToFrequency(hand); }
+  const sorter = (s: string) => s.split('').sort().join('');
+  if (!exclude) { return handToFrequency(sorter(hand)); }
   if (exclude.length !== 2) { throw new Error('exclusion length != 2 unimplemented'); }
 
-  const sorter = (s: string) => s.split('').sort().join('');
   const vsum = (a: number[], b: number[]) => a.map((a, i) => a + b[i]);
   const vsub = (a: number[], b: number[]) => a.map((a, i) => a - b[i]);
 
@@ -81,29 +108,18 @@ async function printRealtime(cards: string[][]) {
   // etc. with the river
 
   let n = 2;
-  console.log(markdownTable(await handsToTable(cards.map(hand => hand.slice(0, 2))), ['Pockets %s'].concat(rankNames)));
+  console.log(
+      markdownTable(await handsToTableCombine(cards.map(hand => hand.slice(0, 2))), ['Pockets %s'].concat(rankNames)));
 
   n = 5;
-  console.log(makeheader('Pockets + flop'));
+  console.log(makeheader('Pockets + flop', 4));
   console.log(
-      markdownTable(await handsToTable(cards.map(hand => hand.slice(0, n))), ['Pockets+flop %s'].concat(rankNames)));
-  console.log(makeheader('(Just flop)', 4));
-  console.log(markdownTable(await handsToTable([cards[0].slice(2, n)]), ['(Flop %s)'].concat(rankNames)));
-  console.log(makeheader('Flop minus each player\'s pocket', 4));
-  console.log(
-      markdownTable(await handsToTable(cards.map(hand => hand.slice(2, n)), cards.map(hand => hand.slice(0, 2))),
-                    ['Flop-pocket %s'].concat(rankNames)));
+      markdownTable(await handsToTableCombine(cards.map(hand => hand.slice(0, n))), ['Pocket+flop'].concat(rankNames)));
 
   n = 6;
   console.log(makeheader('Pockets + flop + turn'));
-  console.log(markdownTable(await handsToTable(cards.map(hand => hand.slice(0, n))),
+  console.log(markdownTable(await handsToTableCombine(cards.map(hand => hand.slice(0, n))),
                             ['Pocket+flop+turn %s'].concat(rankNames)));
-  console.log(makeheader('(Just flop+turn %s)', 4));
-  console.log(markdownTable(await handsToTable([cards[0].slice(2, n)]), ['(flop+turn)'].concat(rankNames)));
-  console.log(makeheader('Flop+turn minus each player\'s pocket', 4));
-  console.log(
-      markdownTable(await handsToTable(cards.map(hand => hand.slice(2, n)), cards.map(hand => hand.slice(0, 2))),
-                    ['Board-pocket %s'].concat(rankNames)));
 
   let objects = cards.map((v, pid) => {
     const initial = v.slice();
