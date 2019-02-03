@@ -23,7 +23,7 @@ function searchBufBigN(buf, r, npocket, verbose = false) {
     for (let [i, c] of utils_1.enumerate(shorts)) {
         char2num.set(c, i);
     }
-    let str2nums = Array.from(Array(shorts.length), _ => new Map());
+    let str2nums = shorts.map(_ => new Map());
     let totalCombinations = 0;
     for (let pocket of comb_1.combinations(shorts, npocket)) {
         str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), 10 * totalCombinations);

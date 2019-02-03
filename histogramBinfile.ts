@@ -11,7 +11,7 @@ const {shorts} = initCards();
 function searchBufBigN(buf: Buffer, r: number, npocket: number, verbose: boolean = false) {
   let char2num: Map<string, number> = new Map();
   for (let [i, c] of enumerate(shorts)) { char2num.set(c, i); }
-  let str2nums: Map<string, number>[] = Array.from(Array(shorts.length), _ => new Map());
+  let str2nums: Map<string, number>[] = shorts.map(_ => new Map());
   let totalCombinations = 0;
   for (let pocket of combinations(shorts, npocket)) {
     str2nums[(char2num.get(pocket[0]) || 0)].set(pocket.join(''), 10 * totalCombinations);
