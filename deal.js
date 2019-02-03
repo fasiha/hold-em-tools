@@ -52,47 +52,56 @@ function markdownTable(arr, header = []) {
     return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
         .join('\n');
 }
-function printResult(cards) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let objects = cards.map((v, pid) => {
-            const initial = sortShorts(v.slice(0, 2)).concat(v.slice(2));
-            const hand = v.slice().sort().join('');
-            return { pid, hand, initial };
-        });
-        objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
-        for (const { pid, hand, initial } of objects) {
-            const score = score2string.get(skinnyRank_1.fastScore(hand));
-            const readable = [string2readable(initial.slice(0, 2).join(''), true), string2readable(initial.slice(2).join(''), false)].join(' | ');
-            console.log(makeheader(`Seat ${pid + 1} :: ${readable} :: ${score}`));
-            let cumulative = [initial.slice(0, 2), initial.slice(0, 5), initial.slice(0, 6)];
-            let table = yield handsToTable(cumulative);
-            console.log(markdownTable(table, ['hand'].concat(rankNames)));
-        }
-        // board: "audience" view
-        {
-            const board = cards[0].slice(2);
-            let cumulative = [board.slice(0, 3), board.slice(0, 4), board.slice()];
-            let table = yield handsToTable(cumulative);
-            console.log(makeheader(`Board :: ${string2readable(board.join(''))}`));
-            console.log(markdownTable(table, ['board'].concat(rankNames)));
-        }
-    });
-}
 function makeheader(text, level = 3) { return `\n${'#'.repeat(level)} ${text}`; }
-function handsToTable(hands) {
+function handsToTable(hands, excludes = []) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (excludes.length > 0 && excludes.length !== hands.length) {
+            throw new Error('need as many exclusions as hands');
+        }
         let table = [];
-        for (const subhand of hands) {
-            const sortedHand = subhand.slice().sort().join('');
-            try {
-                let [_, arr] = yield (node_fetch_1.default('http://localhost:3000/?hand=' + sortedHand).then(x => x.json()));
-                let tot = utils_1.sum(arr);
-                let sub = subhand.join('');
-                table.push([string2readable(sub) + ` (${score2string.get(skinnyRank_1.fastScore(sortedHand))})`].concat(arr.map(n => fmt(n / tot))));
-            }
-            catch (e) { }
+        for (const [idx, hand] of utils_1.enumerate(hands)) {
+            const sortedHand = hand.slice().sort().join('');
+            let ex = excludes[idx] ? excludes[idx].join('') : '';
+            let arr = yield handToFrequencyExclusion(sortedHand, ex);
+            let tot = utils_1.sum(arr);
+            let sub = hand.join('');
+            table.push([
+                string2readable(sub) + (ex ? ` (minus: ${string2readable(ex)})` : '') +
+                    ` (${score2string.get(skinnyRank_1.fastScore(sortedHand))})`
+            ].concat(arr.map(n => fmt(n / tot))));
         }
         return table;
+    });
+}
+function handToFrequency(hand) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let res = yield node_fetch_1.default('http://localhost:3000/?hand=' + hand);
+        if (!res.ok) {
+            throw new Error('HTTP error ' + res.status + ' for: ' + hand);
+        }
+        let [_, arr] = yield res.json();
+        return arr;
+    });
+}
+function handToFrequencyExclusion(hand, exclude = '') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!exclude) {
+            return handToFrequency(hand);
+        }
+        if (exclude.length !== 2) {
+            throw new Error('exclusion length != 2 unimplemented');
+        }
+        const sorter = (s) => s.split('').sort().join('');
+        const vsum = (a, b) => a.map((a, i) => a + b[i]);
+        const vsub = (a, b) => a.map((a, i) => a - b[i]);
+        let handHits = yield handToFrequency(sorter(hand));
+        let handEx0Hits = yield handToFrequency(sorter(hand + exclude[0]));
+        let handEx1Hits = yield handToFrequency(sorter(hand + exclude[1]));
+        let handEx12Hits = Array.from(Array(10), _ => 0);
+        if (hand.length < 5) {
+            handEx12Hits = yield handToFrequency(sorter(hand + exclude));
+        }
+        return vsub(vsum(handHits, handEx12Hits), vsum(handEx1Hits, handEx0Hits));
     });
 }
 function printRealtime(cards) {
@@ -102,17 +111,21 @@ function printRealtime(cards) {
         // then pockets+flop+turn, and flop+turn
         // etc. with the river
         let n = 2;
-        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, 2))), ['Pockets'].concat(rankNames)));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, 2))), ['Pockets %s'].concat(rankNames)));
         n = 5;
         console.log(makeheader('Pockets + flop'));
-        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pockets+flop'].concat(rankNames)));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pockets+flop %s'].concat(rankNames)));
         console.log(makeheader('(Just flop)', 4));
-        console.log(markdownTable(yield handsToTable([cards[0].slice(2, n)]), ['(Flop)'].concat(rankNames)));
+        console.log(markdownTable(yield handsToTable([cards[0].slice(2, n)]), ['(Flop %s)'].concat(rankNames)));
+        console.log(makeheader('Flop minus each player\'s pocket', 4));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(2, n)), cards.map(hand => hand.slice(0, 2))), ['Flop-pocket %s'].concat(rankNames)));
         n = 6;
         console.log(makeheader('Pockets + flop + turn'));
-        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pocket+flop+turn'].concat(rankNames)));
-        console.log(makeheader('(Just flop+turn)', 4));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(0, n))), ['Pocket+flop+turn %s'].concat(rankNames)));
+        console.log(makeheader('(Just flop+turn %s)', 4));
         console.log(markdownTable(yield handsToTable([cards[0].slice(2, n)]), ['(flop+turn)'].concat(rankNames)));
+        console.log(makeheader('Flop+turn minus each player\'s pocket', 4));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(2, n)), cards.map(hand => hand.slice(0, 2))), ['Board-pocket %s'].concat(rankNames)));
         let objects = cards.map((v, pid) => {
             const initial = v.slice();
             const hand = v.slice().sort().join('');
@@ -122,7 +135,10 @@ function printRealtime(cards) {
         });
         objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
         console.log(makeheader('Final'));
-        console.log(markdownTable(yield handsToTable([cards[0].slice(2)]), ['Final board'].concat(rankNames)));
+        console.log(markdownTable(yield handsToTable([cards[0].slice(2)]), ['Final board %s'].concat(rankNames)));
+        n = 7;
+        console.log(makeheader('Board minus each player\'s pocket ≈%s', 4));
+        console.log(markdownTable(yield handsToTable(cards.map(hand => hand.slice(2, n)), cards.map(hand => hand.slice(0, 2))), ['Board-pocket'].concat(rankNames)));
         console.log(objects
             .map((o, i) => `${i + 1}. Player ${o.pid + 1} :: ${string2readable(o.initial.slice(0, 2).sort().join(''))} | ${string2readable(o.initial.slice(2).join(''))} => ${o.score}`)
             .join('\n'));
