@@ -27,18 +27,6 @@ N.B. If you run `$ node deal.js 0` several times, you'll see the exact same deal
 
 Currently, the final printout of the program results in the following Markdown, letting me analyze each player's hand, starting with their two pocket cards, then the board as it gets dealt out. At each point in the game, I can see both (1) the histogram of rankings based on all the cards I can see (my pocket cards and the board) as well as (2) the histogram of other players based on only the board. These two are separated by ×, so a cell in the table below, “8×21” for player 1 after seeing the flop in the “2p” (two-pairs) means, of the five cards they have, there is 8% chance that they'll end up with a two-pair at the end of the game, ***but*** there's a 21% chance that another player might get a two-pair, based on just the board so far.
 
-The abbreviations I use are:
-- rf, royal flush
-- sf, straight flush
-- qu, “quad” or four-of-a-kind
-- fh, full house
-- fl, flush
-- st, straight
-- tr, “trip” or three-of-a-kind
-- 2p, two pairs
-- pa, one pair
-- hi, high card
-
 ### Player 1
 | Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |   2p |    pa |    hi |
 | --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ---- | ----- | ----- |
@@ -76,3 +64,19 @@ The abbreviations I use are:
 2. Player 3 ::  4h 5h |  Qh 7c Js 4c 3d => pa
 3. Player 4 ::  Kd 3h |  Qh 7c Js 4c 3d => pa
 4. Player 1 ::  2c 6s |  Qh 7c Js 4c 3d => hi
+
+---
+
+With the above information, one can readily compute naive [Kelly bets](https://en.wikipedia.org/wiki/Kelly_criterion) for each round of betting, and then get into the non-card aspects of the gameplay.
+
+The abbreviations I use are:
+- rf, royal flush
+- sf, straight flush
+- qu, “quad” or four-of-a-kind
+- fh, full house
+- fl, flush
+- st, straight
+- tr, “trip” or three-of-a-kind
+- 2p, two pairs
+- pa, one pair
+- hi, high card
