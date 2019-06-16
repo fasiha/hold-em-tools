@@ -86,7 +86,7 @@ async function handToFrequencyExclusion(hand: string, exclude: string = '') {
   return vsub(vsum(handHits, handEx12Hits), vsum(handEx1Hits, handEx0Hits));
 }
 
-async function printRealtime(cards: string[][]) {
+export async function printRealtime(cards: string[][]) {
   let objects = cards.map((v, pid) => {
     const initial = v.slice();
     const hand = v.slice().sort().join('');

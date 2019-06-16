@@ -135,6 +135,7 @@ function printRealtime(cards) {
             .join('\n'));
     });
 }
+exports.printRealtime = printRealtime;
 if (module === require.main) {
     (() => __awaiter(this, void 0, void 0, function* () {
         let args = process.argv.slice(2);
