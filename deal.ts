@@ -34,12 +34,27 @@ export function markdownTable(arr: string[][], header: string[] = []): string {
 
 function makeheader(text: string, level: number = 3): string { return `\n${'#'.repeat(level)} ${text}`; }
 
+export const normalize = (arr: number[]) => {
+  const tot = sum(arr);
+  return arr.map(n => n / tot);
+};
+export async function audienceView(hands: string[][]) {
+  let table: string[][] = [];
+  for (const hand of hands) {
+    const shand = hand.slice().sort().join('');
+    let numeric = normalize(await handToFrequencyExclusion(shand));
+    let numbers = numeric.map(o => fmt(o));
+    table.push([string2readable(hand.join('')), ...numbers]);
+  }
+  return table;
+}
+export async function audiencePrintRealtime(board: string[]) {
+  let table = await audienceView([3, 4, 5].map(n => board.slice(0, n)));
+  console.log(markdownTable(table, [`Percents`].concat(rankNames)));
+}
 export async function handsToTableCombine(hands: string[][]) {
   let table: string[][] = [];
-  const normalize = (arr: number[]) => {
-    const tot = sum(arr);
-    return arr.map(n => n / tot);
-  };
+
   for (const hand of hands) {
     const shand = hand.slice().sort().join('');
     if (hand.length > 3) {
@@ -70,7 +85,7 @@ async function handToFrequency(hand: string) {
   return arr;
 }
 
-async function handToFrequencyExclusion(hand: string, exclude: string = '') {
+export async function handToFrequencyExclusion(hand: string, exclude: string = '') {
   const sorter = (s: string) => s.split('').sort().join('');
   if (!exclude) { return handToFrequency(sorter(hand)); }
   if (exclude.length !== 2) { throw new Error('exclusion length != 2 unimplemented'); }

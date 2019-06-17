@@ -54,20 +54,40 @@ function markdownTable(arr, header = []) {
 }
 exports.markdownTable = markdownTable;
 function makeheader(text, level = 3) { return `\n${'#'.repeat(level)} ${text}`; }
+exports.normalize = (arr) => {
+    const tot = utils_1.sum(arr);
+    return arr.map(n => n / tot);
+};
+function audienceView(hands) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let table = [];
+        for (const hand of hands) {
+            const shand = hand.slice().sort().join('');
+            let numeric = exports.normalize(yield handToFrequencyExclusion(shand));
+            let numbers = numeric.map(o => fmt(o));
+            table.push([string2readable(hand.join('')), ...numbers]);
+        }
+        return table;
+    });
+}
+exports.audienceView = audienceView;
+function audiencePrintRealtime(board) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let table = yield audienceView([3, 4, 5].map(n => board.slice(0, n)));
+        console.log(markdownTable(table, [`Percents`].concat(exports.rankNames)));
+    });
+}
+exports.audiencePrintRealtime = audiencePrintRealtime;
 function handsToTableCombine(hands) {
     return __awaiter(this, void 0, void 0, function* () {
         let table = [];
-        const normalize = (arr) => {
-            const tot = utils_1.sum(arr);
-            return arr.map(n => n / tot);
-        };
         for (const hand of hands) {
             const shand = hand.slice().sort().join('');
             if (hand.length > 3) {
-                let arrMine = shand.length === 7 ? [] : normalize(yield handToFrequencyExclusion(shand));
+                let arrMine = shand.length === 7 ? [] : exports.normalize(yield handToFrequencyExclusion(shand));
                 let pocket = hand.slice(0, 2).join('');
                 let board = hand.slice(2).join('');
-                let arrOthers = normalize(yield handToFrequencyExclusion(board, pocket));
+                let arrOthers = exports.normalize(yield handToFrequencyExclusion(board, pocket));
                 let numbers = arrOthers.map((o, i) => (i in arrMine ? fmt(arrMine[i]) : '') + `×${fmt(o)}`);
                 let row = [
                     (string2readable(pocket) + '×' + string2readable(board)) + ' = ' + score2string.get(skinnyRank_1.fastScore(shand)),
@@ -76,7 +96,7 @@ function handsToTableCombine(hands) {
                 table.push(row);
             }
             else {
-                let arrMine = normalize(yield handToFrequencyExclusion(hand.join('')));
+                let arrMine = exports.normalize(yield handToFrequencyExclusion(hand.join('')));
                 let numbers = arrMine.map(fmt);
                 let row = [string2readable(shand) + ' = ' + score2string.get(skinnyRank_1.fastScore(shand)), ...numbers];
                 table.push(row);
@@ -117,6 +137,7 @@ function handToFrequencyExclusion(hand, exclude = '') {
         return vsub(vsum(handHits, handEx12Hits), vsum(handEx1Hits, handEx0Hits));
     });
 }
+exports.handToFrequencyExclusion = handToFrequencyExclusion;
 function printRealtime(cards) {
     return __awaiter(this, void 0, void 0, function* () {
         let objects = cards.map((v, pid) => {

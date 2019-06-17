@@ -1,5 +1,5 @@
 import {combinations} from './comb';
-import {handsToTableCombine, markdownTable, printRealtime, rankNames} from './deal';
+import {audiencePrintRealtime, handsToTableCombine, markdownTable, printRealtime, rankNames} from './deal';
 import {initCards, readableToShort, validateShort} from './skinnyRank';
 
 function parseRank(s: string): string {
@@ -18,9 +18,17 @@ function pocketsAndBoard(pockets: string[], board: string): string[][] {
 
 if (module === require.main) {
   (async function() {
-    console.log('# Using `boardAndPockets` for a game');
+    { // watching analysis
+      console.log('\n# Audience views');
+      console.log('## Game 1');
+      await audiencePrintRealtime(readablesToShorts('9d 8h 10d 9s 4s'));
+      console.log('## Game 2');
+      await audiencePrintRealtime(readablesToShorts('Jh Kc Kd 5c 3c'));
+    }
+
+    console.log('\n# Using `boardAndPockets` for a game');
     await printRealtime(pocketsAndBoard('3h 4h, 6d 8h, 7s Js, 10s 6h, 6c Jd'.split(', '), 'Kc 8c 8d Qc As'));
-    console.log('# Using `readablesToShorts` for several unrelated cards');
+    console.log('\n# Using `readablesToShorts` for several unrelated cards');
     await printRealtime([
       readablesToShorts('Kd 4c 4d 7h 9h 8h 6d'),
       readablesToShorts('5h 5c 8c 4h 4s Qh Ah'),

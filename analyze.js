@@ -30,9 +30,16 @@ function pocketsAndBoard(pockets, board) {
 if (module === require.main) {
     (function () {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('# Using `boardAndPockets` for a game');
+            { // watching analysis
+                console.log('\n# Audience views');
+                console.log('## Game 1');
+                yield deal_1.audiencePrintRealtime(readablesToShorts('9d 8h 10d 9s 4s'));
+                console.log('## Game 2');
+                yield deal_1.audiencePrintRealtime(readablesToShorts('Jh Kc Kd 5c 3c'));
+            }
+            console.log('\n# Using `boardAndPockets` for a game');
             yield deal_1.printRealtime(pocketsAndBoard('3h 4h, 6d 8h, 7s Js, 10s 6h, 6c Jd'.split(', '), 'Kc 8c 8d Qc As'));
-            console.log('# Using `readablesToShorts` for several unrelated cards');
+            console.log('\n# Using `readablesToShorts` for several unrelated cards');
             yield deal_1.printRealtime([
                 readablesToShorts('Kd 4c 4d 7h 9h 8h 6d'),
                 readablesToShorts('5h 5c 8c 4h 4s Qh Ah'),
