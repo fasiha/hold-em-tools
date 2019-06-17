@@ -1,5 +1,7 @@
-import {printRealtime} from './deal';
-import {readableToShort, validateShort} from './skinnyRank';
+import {combinations} from './comb';
+import {handsToTableCombine, markdownTable, printRealtime, rankNames} from './deal';
+import {initCards, readableToShort, validateShort} from './skinnyRank';
+
 function parseRank(s: string): string {
   let res = parseInt(s.replace('A', '1'));
   return isNaN(res) ? s : '' + (res - 1);
@@ -25,5 +27,19 @@ if (module === require.main) {
       readablesToShorts('Qc 10d 10s 7d 10h 2c Jd'),
       readablesToShorts('Jh 3s Js 8s 5d Qd 7c'),
     ]);
+
+    {
+      // Pockets, suited and unsuited
+      const {shorts} = initCards();
+      let pockets = [];
+      for (let first of shorts.slice(0, 13)) {
+        for (let second of shorts.slice(13, 26)) { pockets.push([first, second]); }
+      }
+      console.log(markdownTable(await handsToTableCombine(pockets), [`Percents`].concat(rankNames)));
+
+      pockets = [];
+      for (let pocket of combinations(shorts.slice(0, 13), 2)) { pockets.push(pocket); }
+      console.log(markdownTable(await handsToTableCombine(pockets), [`Percents`].concat(rankNames)));
+    }
   })();
 }

@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const comb_1 = require("./comb");
 const deal_1 = require("./deal");
 const skinnyRank_1 = require("./skinnyRank");
 function parseRank(s) {
@@ -38,6 +39,22 @@ if (module === require.main) {
                 readablesToShorts('Qc 10d 10s 7d 10h 2c Jd'),
                 readablesToShorts('Jh 3s Js 8s 5d Qd 7c'),
             ]);
+            {
+                // Pockets, suited and unsuited
+                const { shorts } = skinnyRank_1.initCards();
+                let pockets = [];
+                for (let first of shorts.slice(0, 13)) {
+                    for (let second of shorts.slice(13, 26)) {
+                        pockets.push([first, second]);
+                    }
+                }
+                console.log(deal_1.markdownTable(yield deal_1.handsToTableCombine(pockets), [`Percents`].concat(deal_1.rankNames)));
+                pockets = [];
+                for (let pocket of comb_1.combinations(shorts.slice(0, 13), 2)) {
+                    pockets.push(pocket);
+                }
+                console.log(deal_1.markdownTable(yield deal_1.handsToTableCombine(pockets), [`Percents`].concat(deal_1.rankNames)));
+            }
         });
     })();
 }

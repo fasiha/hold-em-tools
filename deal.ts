@@ -5,7 +5,7 @@ import {shortToReadable, shortToNumberAcesHigh, fastScore, compareHands, initCar
 import {sum, enumerate} from './utils';
 const {shorts} = initCards();
 
-const rankNames = 'rf,sf,qu,fh,fl,st,tr,2p,pa,hi'.split(',');
+export const rankNames = 'rf,sf,qu,fh,fl,st,tr,2p,pa,hi'.split(',');
 const score2string: Map<number, string> = new Map(rankNames.map((s, i) => [i + 1, s] as [number, string]));
 function sortShorts(hand: string[], ascending: boolean = true): string[] {
   return hand.sort((a, b) => (ascending ? 1 : -1) * (shortToNumberAcesHigh(a) - shortToNumberAcesHigh(b)));
@@ -23,7 +23,7 @@ function fmt(n: number): string {
 function pad(str: string, desiredLen: number, padChar: string = ' ', left: boolean = true) {
   return (left ? '' : str) + padChar.repeat(Math.max(0, desiredLen - str.length)) + (left ? str : '');
 }
-function markdownTable(arr: string[][], header: string[] = []): string {
+export function markdownTable(arr: string[][], header: string[] = []): string {
   let cols = arr[0].length;
   if (header.length) { arr = [header].concat(arr); }
   let widths = Array.from(Array(cols), (_, n) => n).map(col => Math.max(...arr.map(v => v[col].length)));
@@ -34,7 +34,7 @@ function markdownTable(arr: string[][], header: string[] = []): string {
 
 function makeheader(text: string, level: number = 3): string { return `\n${'#'.repeat(level)} ${text}`; }
 
-async function handsToTableCombine(hands: string[][]) {
+export async function handsToTableCombine(hands: string[][]) {
   let table: string[][] = [];
   const normalize = (arr: number[]) => {
     const tot = sum(arr);

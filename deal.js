@@ -16,8 +16,8 @@ var shuffle = require('knuth-shuffle-seeded');
 const skinnyRank_1 = require("./skinnyRank");
 const utils_1 = require("./utils");
 const { shorts } = skinnyRank_1.initCards();
-const rankNames = 'rf,sf,qu,fh,fl,st,tr,2p,pa,hi'.split(',');
-const score2string = new Map(rankNames.map((s, i) => [i + 1, s]));
+exports.rankNames = 'rf,sf,qu,fh,fl,st,tr,2p,pa,hi'.split(',');
+const score2string = new Map(exports.rankNames.map((s, i) => [i + 1, s]));
 function sortShorts(hand, ascending = true) {
     return hand.sort((a, b) => (ascending ? 1 : -1) * (skinnyRank_1.shortToNumberAcesHigh(a) - skinnyRank_1.shortToNumberAcesHigh(b)));
 }
@@ -52,6 +52,7 @@ function markdownTable(arr, header = []) {
     return arr.map(row => '| ' + row.map((elt, colidx) => pad(elt, widths[colidx], ' ', colidx !== 0)).join(' | ') + ' |')
         .join('\n');
 }
+exports.markdownTable = markdownTable;
 function makeheader(text, level = 3) { return `\n${'#'.repeat(level)} ${text}`; }
 function handsToTableCombine(hands) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -84,6 +85,7 @@ function handsToTableCombine(hands) {
         return table;
     });
 }
+exports.handsToTableCombine = handsToTableCombine;
 function handToFrequency(hand) {
     return __awaiter(this, void 0, void 0, function* () {
         let res = yield node_fetch_1.default('http://localhost:3000/?hand=' + hand);
@@ -127,7 +129,7 @@ function printRealtime(cards) {
         objects.sort((a, b) => skinnyRank_1.compareHands(a.hand, b.hand));
         for (let [hid, hand] of utils_1.enumerate(cards)) {
             console.log(makeheader(`Player ${hid + 1}`));
-            console.log(markdownTable(yield handsToTableCombine([2, 5, 6, 7].map(n => hand.slice(0, n))), [`Percents`].concat(rankNames)));
+            console.log(markdownTable(yield handsToTableCombine([2, 5, 6, 7].map(n => hand.slice(0, n))), [`Percents`].concat(exports.rankNames)));
         }
         console.log(makeheader('Finally'));
         console.log(objects
