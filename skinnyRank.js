@@ -51,8 +51,14 @@ function shortToSuit(short) {
 }
 function validateShort(short) { return /^[a-zA-Z]$/.test(short); }
 exports.validateShort = validateShort;
+var parseRank = (s) => {
+    let res = parseInt(s.replace('A', '1'));
+    return isNaN(res) ? s : '' + (res - 1);
+};
 // Not intended for speed!
-function readableToShort(rank, suit) {
+function readableToShort(raw) {
+    const rank = parseRank(raw.slice(0, -1));
+    const suit = raw.slice(-1);
     let rankIdx = ranks.indexOf(rank);
     let suitIdx = suits.indexOf(suit);
     if (rankIdx === -1 || suitIdx === -1) {

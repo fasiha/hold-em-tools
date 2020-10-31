@@ -45,8 +45,14 @@ function shortToSuit(short: string): string {
   return ((short < 'N') && 'c') || ((short <= 'Z') && 'd') || ((short < 'n') && 'h') || 's';
 }
 export function validateShort(short: string): boolean { return /^[a-zA-Z]$/.test(short); }
+var parseRank = (s: string) => {
+  let res = parseInt(s.replace('A', '1'));
+  return isNaN(res) ? s : '' + (res - 1);
+};
 // Not intended for speed!
-export function readableToShort(rank: string, suit: string): string {
+export function readableToShort(raw: string): string {
+  const rank = parseRank(raw.slice(0, -1));
+  const suit = raw.slice(-1);
   let rankIdx = ranks.indexOf(rank);
   let suitIdx = suits.indexOf(suit);
   if (rankIdx === -1 || suitIdx === -1) { throw new Error('bad readable: ' + [[rank, rankIdx], [suit, suitIdx]]); }

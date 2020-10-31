@@ -18,7 +18,7 @@ io.on('connection', s => {
     s.join(room);
     s.on(room, (data) => {
       console.log({room, data});
-      s.to(room).emit(room, data);
+      io.in(room).emit(room, data);
     })
   })
 });

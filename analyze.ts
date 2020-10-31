@@ -2,12 +2,8 @@ import {combinations} from './comb';
 import {audiencePrintRealtime, handsToTableCombine, markdownTable, printRealtime, rankNames} from './deal';
 import {initCards, readableToShort, validateShort} from './skinnyRank';
 
-function parseRank(s: string): string {
-  let res = parseInt(s.replace('A', '1'));
-  return isNaN(res) ? s : '' + (res - 1);
-};
 function readablesToShorts(s: string): string[] {
-  const arr = s.trim().split(' ').map(s => readableToShort(parseRank(s.slice(0, -1)), s.slice(-1)));
+  const arr = s.trim().split(' ').map(s => readableToShort(s));
   if (!arr.every(validateShort)) { throw new Error('invalid'); }
   return arr;
 };

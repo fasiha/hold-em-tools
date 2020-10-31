@@ -6,7 +6,7 @@ var parseRank = s => {
   return isNaN(res) ? s : '' + (res - 1);
 };
 var ss = s => {
-  const arr = s.trim().split(' ').map(s => readableToShort(parseRank(s.slice(0, -1)), s.slice(-1)));
+  const arr = s.trim().split(' ').map(readableToShort);
   if (!arr.every(validateShort)) { throw new Error('invalid'); }
   return arr.sort().join('');
 };

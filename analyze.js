@@ -11,13 +11,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const comb_1 = require("./comb");
 const deal_1 = require("./deal");
 const skinnyRank_1 = require("./skinnyRank");
-function parseRank(s) {
-    let res = parseInt(s.replace('A', '1'));
-    return isNaN(res) ? s : '' + (res - 1);
-}
-;
 function readablesToShorts(s) {
-    const arr = s.trim().split(' ').map(s => skinnyRank_1.readableToShort(parseRank(s.slice(0, -1)), s.slice(-1)));
+    const arr = s.trim().split(' ').map(s => skinnyRank_1.readableToShort(s));
     if (!arr.every(skinnyRank_1.validateShort)) {
         throw new Error('invalid');
     }

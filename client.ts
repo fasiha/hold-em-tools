@@ -1,7 +1,7 @@
 
 import React, {createElement as ce} from 'react';
 import ReactDOM from 'react-dom';
-import {initCards} from "./skinnyRank";
+import {initCards, shortToReadable} from "./skinnyRank";
 const shuffle: ((v: string[], seed?: number) => string[]) = require('knuth-shuffle-seeded');
 
 const shortsString = initCards().shorts.join('');
@@ -11,6 +11,7 @@ interface Table {
   tableName: string;
   myName: string;
   players: string[];
+  cardsRevealed: boolean;
   seed?: number;
   pocket?: string[];
   board?: string[];
@@ -38,6 +39,7 @@ export const table = observable({
   tableName: 'default',
   myName: Math.random().toString(36).slice(2).slice(0, 4),
   players: [],
+  cardsRevealed: false,
 } as Table);
 const Table = observer(function Table() {
   if (!table.tableName) {
@@ -67,7 +69,56 @@ const Table = observer(function Table() {
   const allPlayers = ce(
       'div', null, table.players.length <= 1 ? ce('button', {onClick: () => announce()}, 'Announce') : 'Players here:',
       ce('ol', null, ...table.players.map(n => ce('li', null, n))));
-  return ce('div', null, tableName, myName, allPlayers);
+
+  let cards =
+      ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + table.pocket.map(shortToReadable).join(' ')) : ''),
+         ce('p', null, table.board ? ('Board: ' + table.board.map(shortToReadable).join(' ')) : ''),
+         ce('p', null, table.cardsRevealed ? 'TODO: show others cards' : ''));
+
+  let buttonText = '';
+  let onClick: () => void = () => {};
+  if (table.players.length > 1) {
+    if (!table.pocket) {
+      buttonText = 'Deal pockets';
+      onClick = () => {
+        table.seed = Math.random();
+        const msg: DealMsg = {msgName: 'pocket', players: table.players, seed: table.seed};
+        socket.emit(table.tableName, msg)
+      };
+    } else if (!table.board) {
+      buttonText = 'Deal flop';
+      onClick = () => {
+        if (!table.seed) { return; }
+        const msg: DealMsg = {msgName: 'flop', players: table.players, seed: table.seed};
+        socket.emit(table.tableName, msg)
+      };
+    } else if (table.board.length === 3) {
+      buttonText = 'Deal turn'
+      onClick = () => {
+        if (!table.seed) { return; }
+        const msg: DealMsg = {msgName: 'turn', players: table.players, seed: table.seed};
+        socket.emit(table.tableName, msg)
+      };
+    } else if (table.board.length === 4) {
+      buttonText = 'Deal river'
+      onClick = () => {
+        if (!table.seed) { return; }
+        const msg: DealMsg = {msgName: 'river', players: table.players, seed: table.seed};
+        socket.emit(table.tableName, msg)
+      };
+    } else {
+      buttonText = 'Showdown!'
+      onClick = () => {
+        if (!table.seed) { return; }
+        const msg: DealMsg = {msgName: 'showdown', players: table.players, seed: table.seed};
+        socket.emit(table.tableName, msg)
+      };
+    }
+  }
+  console.log(toJS(table), buttonText);
+
+  const advanceGame = buttonText ? ce('button', {onClick: action(onClick)}, buttonText) : '';
+  return ce('div', null, tableName, myName, allPlayers, advanceGame, cards);
 })
 
 ReactDOM.render(ce(React.StrictMode, null, ce(React.Suspense, {fallback: ce('p', null, 'Loading…')}, ce(Table))),
@@ -135,6 +186,7 @@ socket.on(
           if (!river) { throw new Error('ran out of cards for river?') }
           table.board.push(river);
 
+          if (m.msgName === 'showdown') { table.cardsRevealed = true; }
         } else {
           table.pocket === undefined;
         }
