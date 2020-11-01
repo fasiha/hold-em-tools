@@ -4,12 +4,12 @@ import React, {createElement as ce} from 'react';
 import ReactDOM from 'react-dom';
 
 import {playerAnalysis} from './playerHelper';
-import {initCards, shortToReadable} from "./skinnyRank";
+import {fastScore, initCards, shortToReadable} from "./skinnyRank";
 
 const shuffle: ((v: string[], seed?: number) => string[]) = require('knuth-shuffle-seeded');
 const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Trips,Two pairs,Pair,High'.split(',');
-
 const shortsString = initCards().shorts.join('');
+
 export const socket = io();
 
 interface Table {
@@ -78,7 +78,9 @@ const Table = observer(function Table() {
          ce('p', null, table.board ? ('Board: ' + table.board.map(shortToReadable).join(' ')) : ''),
          ce('ol', null,
             ...Object.entries(table.otherPockets || {})
-                .map(([k, v]) => ce('li', null, `${k} : ${v.map(shortToReadable).join(' ')}`))));
+                .map(([k, v]) => ce('li', null,
+                                    `${k} : ${v.map(shortToReadable).join(' ')} → ${
+                                        shortsToReadableScore(v.concat(table.board || []))}`))));
 
   let buttonText = '';
   let onClick: () => void = () => {};
@@ -124,13 +126,15 @@ const Table = observer(function Table() {
       };
     }
   }
+
   let analysisComp = ce('ul');
   const analysis = table.analysis;
   if (analysis) {
     const my = analysis.my ? formatHistogram(analysis.my) : undefined;
     const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
     const numbers = handNames.map((name, i) => `${name}: ${my ? my[i] : ''} ${rest ? `(${rest[i]})` : ''}`);
-    analysisComp = ce('ul', null, ...numbers.map(s => ce('li', null, s)));
+    analysisComp = ce('div', null, shortsToReadableScore((table.board || []).concat(table.pocket || [])) + '!',
+                      ce('ul', null, ...numbers.map(s => ce('li', null, s))));
   }
 
   const advanceGame = buttonText ? ce('button', {onClick: action(onClick)}, buttonText) : '';
@@ -240,5 +244,6 @@ function formatHistogram(v: number[]) {
   const sum = v.reduce((p, c) => p + c);
   return v.map(x => Math.round(x / sum * 1000) / 10);
 }
+function shortsToReadableScore(v: string[]) { return handNames[fastScore(v.sort().join('')) - 1]; }
 
 // client.socket.emit('hello', {wasap:'whee'}) // talks to server
