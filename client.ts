@@ -71,7 +71,7 @@ const Table = observer(function Table() {
   const myName = ce('p', null, `My name: ${table.myName}`);
   const allPlayers = ce(
       'div', null, table.players.length <= 1 ? ce('button', {onClick: () => announce()}, 'Announce') : 'Players here:',
-      ce('ol', null, ...table.players.map(n => ce('li', null, n))));
+      ce('ol', null, ...table.players.map(n => ce('li', null, n === table.analysis ? `Me (${n})` : n))));
 
   let otherPocketsText: string[] = [];
   const {pocket, board, otherPockets} = table;
@@ -83,19 +83,17 @@ const Table = observer(function Table() {
       const idx = sortedPlayers.findIndex(x => x === p);
       if (p === table.myName) {
         const result = shortsToReadableScore(pocket.concat(board));
-        otherPocketsText.push(
-            `Me: ${pocket.map(shortToReadable).join(' ')}  → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`)
+        otherPocketsText.push(`Me (${p}): ${shortsToEmoji(pocket)}  → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`)
       } else {
         const result = shortsToReadableScore(otherPockets[p].concat(board));
         otherPocketsText.push(
-            `${p}: ${otherPockets[p].map(shortToReadable).join(' ')} → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`);
+            `${p}: ${shortsToEmoji(otherPockets[p])} → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`);
       }
     }
   }
-  let cards =
-      ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + table.pocket.map(shortToReadable).join(' ')) : ''),
-         ce('p', null, table.board ? ('Board: ' + table.board.map(shortToReadable).join(' ')) : ''),
-         ce('ol', null, ...otherPocketsText.map(o => ce('li', null, o))));
+  let cards = ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + shortsToEmoji(table.pocket)) : ''),
+                 ce('p', null, table.board ? ('Board: ' + shortsToEmoji(table.board)) : ''),
+                 ce('ol', null, ...otherPocketsText.map(o => ce('li', null, o))));
 
   let buttonText = '';
   let onClick: () => void = () => {};
@@ -147,8 +145,12 @@ const Table = observer(function Table() {
   if (analysis) {
     const my = analysis.my ? formatHistogram(analysis.my) : undefined;
     const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
-    const numbers = handNames.map((name, i) => `${name}: ${my ? my[i] : ''} ${rest ? `(${rest[i]})` : ''}`);
-    analysisComp = ce('div', null, shortsToReadableScore((table.board || []).concat(table.pocket || [])) + '!',
+    const numbers =
+        handNames.map((name, i) => `${name}: ${my ? my[i] + '%' : ''} ${rest ? `(others: ${rest[i]}%)` : ''}`);
+    analysisComp = ce('div', null,
+                      'My current hand is a: ' +
+                          ce('strong', null, shortsToReadableScore((table.board || []).concat(table.pocket || []))) +
+                          '. Here are the probabilities of what this hand might turn into:',
                       ce('ul', null, ...numbers.map(s => ce('li', null, s))));
   }
 
@@ -260,5 +262,17 @@ function formatHistogram(v: number[]) {
   return v.map(x => Math.round(x / sum * 1000) / 10);
 }
 function shortsToReadableScore(v: string[]) { return handNames[fastScore(v.sort().join('')) - 1]; }
-
-// client.socket.emit('hello', {wasap:'whee'}) // talks to server
+const suitToEmoji: Record<string, string> = {
+  c: '⛳️',
+  d: '💎',
+  h: '💓',
+  s: '💐'
+};
+function shortsToEmoji(v: string[]) {
+  return v.map(shortToReadable)
+      .map(s => {
+        const fin = s[s.length - 1];
+        return s.slice(0, -1) + (suitToEmoji[fin] || fin);
+      })
+      .join(' ');
+}
