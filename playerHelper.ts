@@ -25,7 +25,7 @@ export function playerAnalysis(shortsSoFar: string[]): {my?: number[], rest?: nu
   if (len >= 5) {
     const board = shortsSoFar.slice(2);
     if (board.length === 3) {
-      restHistogram = [0].concat((flop as Record<string, number[]>)[shortsSoFar.slice().sort().join('')]);
+      restHistogram = [0].concat((flop as Record<string, number[]>)[board.slice().sort().join('')]);
     } else {
       for (const newCards of combinations(deckRemaining, 7 - board.length)) {
         restHistogram[fastScore(board.concat(newCards).sort().join(''))]++;

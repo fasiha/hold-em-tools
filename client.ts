@@ -143,6 +143,7 @@ const Table = observer(function Table() {
   let analysisComp = ce('ul');
   const analysis = table.analysis;
   if (analysis) {
+    console.log(toJS(analysis), '!');
     const my = analysis.my ? formatHistogram(analysis.my) : undefined;
     const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
     const numbers =
