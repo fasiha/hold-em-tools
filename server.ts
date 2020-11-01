@@ -2,6 +2,7 @@ import express from 'express';
 import SocketIO from 'socket.io';
 
 const app = express();
+app.use(require('compression')())
 const port = process.env.PORT || 4000;
 
 // app.get('/', async (req, res) => {});
