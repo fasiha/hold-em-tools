@@ -11,10 +11,10 @@ interface Table {
   tableName: string;
   myName: string;
   players: string[];
-  cardsRevealed: boolean;
   seed?: number;
   pocket?: string[];
   board?: string[];
+  otherPockets?: Record<string, string[]>;
 }
 
 interface JoiningMsg {
@@ -39,7 +39,6 @@ export const table = observable({
   tableName: 'default',
   myName: Math.random().toString(36).slice(2).slice(0, 4),
   players: [],
-  cardsRevealed: false,
 } as Table);
 const Table = observer(function Table() {
   if (!table.tableName) {
@@ -73,17 +72,22 @@ const Table = observer(function Table() {
   let cards =
       ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + table.pocket.map(shortToReadable).join(' ')) : ''),
          ce('p', null, table.board ? ('Board: ' + table.board.map(shortToReadable).join(' ')) : ''),
-         ce('p', null, table.cardsRevealed ? 'TODO: show others cards' : ''));
+         ce('ol', null,
+            ...Object.entries(table.otherPockets || {})
+                .map(([k, v]) => ce('li', null, `${k} : ${v.map(shortToReadable).join(' ')}`))));
 
   let buttonText = '';
   let onClick: () => void = () => {};
   if (table.players.length > 1) {
-    if (!table.pocket) {
+    if (!table.pocket || table.otherPockets) {
       buttonText = 'Deal pockets';
       onClick = () => {
         table.seed = Math.random();
+        table.board = undefined;
+        table.pocket = undefined;
+        table.otherPockets = undefined;
         const msg: DealMsg = {msgName: 'pocket', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg)
+        socket.emit(table.tableName, msg);
       };
     } else if (!table.board) {
       buttonText = 'Deal flop';
@@ -115,8 +119,6 @@ const Table = observer(function Table() {
       };
     }
   }
-  console.log(toJS(table), buttonText);
-
   const advanceGame = buttonText ? ce('button', {onClick: action(onClick)}, buttonText) : '';
   return ce('div', null, tableName, myName, allPlayers, advanceGame, cards);
 })
@@ -132,14 +134,13 @@ export const announce = action(function announce() {
   socket.emit(table.tableName, myJoiningMsg);
 });
 
-console.log('tableName', table.tableName);
 socket.on(
     table.tableName,
     action((m: Msg) => {
       console.log('MSG RECEIVED!', m);
       if (m.msgName === 'joining') {
         // new player is announcing a join
-        if (!table.pocket) {
+        if (!table.pocket && table.myName !== m.name) {
           table.players = sortedUnique(table.players.concat(m.name));
           const welcome: WelcomeMsg = {msgName: 'welcome', from: table.myName, players: table.players};
           socket.emit(table.tableName, welcome);
@@ -160,14 +161,25 @@ socket.on(
 
           const shorts = shortsString.split('');
           shuffle(shorts, table.seed);
+
+          const otherPockets: Record<string, string[]> = {};
+
           for (const name of table.players) {
             const first = shorts.pop();
             const second = shorts.pop();
             if (!(first && second)) { throw new Error('ran out of cards for pocket?') }
-            if (name === table.myName) { table.pocket = [first, second]; }
+            if (name === table.myName) {
+              table.pocket = [first, second];
+            } else {
+              otherPockets[name] = [first, second];
+            }
           }
 
-          if (m.msgName === 'pocket') { return; }
+          if (m.msgName === 'pocket') {
+            table.board = undefined;
+            table.otherPockets = undefined;
+            return;
+          }
 
           table.board = [];
           for (let i = 0; i < 3; i++) {
@@ -186,12 +198,11 @@ socket.on(
           if (!river) { throw new Error('ran out of cards for river?') }
           table.board.push(river);
 
-          if (m.msgName === 'showdown') { table.cardsRevealed = true; }
+          if (m.msgName === 'showdown') { table.otherPockets = otherPockets; }
         } else {
           table.pocket === undefined;
         }
       } else {
-        console.log(m);
         assertNever(m.msgName);
       }
     }),
