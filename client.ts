@@ -147,10 +147,9 @@ const Table = observer(function Table() {
     const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
     const numbers =
         handNames.map((name, i) => `${name}: ${my ? my[i] + '%' : ''} ${rest ? `(others: ${rest[i]}%)` : ''}`);
-    analysisComp = ce('div', null,
-                      'My current hand is a: ' +
-                          ce('strong', null, shortsToReadableScore((table.board || []).concat(table.pocket || []))) +
-                          '. Here are the probabilities of what this hand might turn into:',
+    analysisComp = ce('div', null, 'My current hand is a: ',
+                      ce('strong', null, shortsToReadableScore((table.board || []).concat(table.pocket || []))),
+                      '. Here are the probabilities of what this hand might turn into:',
                       ce('ul', null, ...numbers.map(s => ce('li', null, s))));
   }
 
