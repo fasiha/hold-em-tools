@@ -2,7 +2,7 @@
   "name": "hold-em-tools",
   "version": "1.0.0",
   "description": "",
-  "main": "skinnyRank.js",
+  "main": "server.js",
   "scripts": {
     "build": "tsc -p .",
     "bundle": "browserify client.js -o client.bundle.js -s client",
