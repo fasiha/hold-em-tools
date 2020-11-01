@@ -1,8 +1,13 @@
-
+import {action, autorun, observable, toJS} from "mobx";
+import {observer} from 'mobx-react-lite';
 import React, {createElement as ce} from 'react';
 import ReactDOM from 'react-dom';
+
+import {playerAnalysis} from './playerHelper';
 import {initCards, shortToReadable} from "./skinnyRank";
+
 const shuffle: ((v: string[], seed?: number) => string[]) = require('knuth-shuffle-seeded');
+const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Trips,Two pairs,Pair,High'.split(',');
 
 const shortsString = initCards().shorts.join('');
 export const socket = io();
@@ -15,6 +20,7 @@ interface Table {
   pocket?: string[];
   board?: string[];
   otherPockets?: Record<string, string[]>;
+  analysis?: ReturnType<typeof playerAnalysis>;
 }
 
 interface JoiningMsg {
@@ -33,8 +39,6 @@ interface DealMsg {
 }
 type Msg = JoiningMsg|WelcomeMsg|DealMsg;
 
-import {observable, action, autorun, toJS} from "mobx";
-import {observer} from 'mobx-react-lite';
 export const table = observable({
   tableName: 'default',
   myName: Math.random().toString(36).slice(2).slice(0, 4),
@@ -86,6 +90,7 @@ const Table = observer(function Table() {
         table.board = undefined;
         table.pocket = undefined;
         table.otherPockets = undefined;
+        table.analysis = undefined;
         const msg: DealMsg = {msgName: 'pocket', players: table.players, seed: table.seed};
         socket.emit(table.tableName, msg);
       };
@@ -119,8 +124,17 @@ const Table = observer(function Table() {
       };
     }
   }
+  let analysisComp = ce('ul');
+  const analysis = table.analysis;
+  if (analysis) {
+    const my = analysis.my ? formatHistogram(analysis.my) : undefined;
+    const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
+    const numbers = handNames.map((name, i) => `${name}: ${my ? my[i] : ''} ${rest ? `(${rest[i]})` : ''}`);
+    analysisComp = ce('ul', null, ...numbers.map(s => ce('li', null, s)));
+  }
+
   const advanceGame = buttonText ? ce('button', {onClick: action(onClick)}, buttonText) : '';
-  return ce('div', null, tableName, myName, allPlayers, advanceGame, cards);
+  return ce('div', null, tableName, myName, allPlayers, advanceGame, cards, analysisComp);
 })
 
 ReactDOM.render(ce(React.StrictMode, null, ce(React.Suspense, {fallback: ce('p', null, 'Loading…')}, ce(Table))),
@@ -158,6 +172,7 @@ socket.on(
         if (arrayEqual(m.players, table.players) && table.players.includes(table.myName)) {
           table.pocket = undefined;
           table.board = undefined;
+          table.otherPockets = undefined;
 
           const shorts = shortsString.split('');
           shuffle(shorts, table.seed);
@@ -176,8 +191,8 @@ socket.on(
           }
 
           if (m.msgName === 'pocket') {
-            table.board = undefined;
-            table.otherPockets = undefined;
+            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+
             return;
           }
 
@@ -187,18 +202,28 @@ socket.on(
             if (!popped) { throw new Error('ran out of cards for flop?') }
             table.board.push(popped);
           }
-          if (m.msgName === 'flop') { return; }
+          if (m.msgName === 'flop') {
+            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+            return;
+          }
 
           const turn = shorts.pop();
           if (!turn) { throw new Error('ran out of cards for turn?') }
           table.board.push(turn);
-          if (m.msgName === 'turn') { return; }
+          if (m.msgName === 'turn') {
+            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+            return;
+          }
 
           const river = shorts.pop();
           if (!river) { throw new Error('ran out of cards for river?') }
           table.board.push(river);
 
-          if (m.msgName === 'showdown') { table.otherPockets = otherPockets; }
+          if (m.msgName === 'river') {
+            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+          } else {
+            table.otherPockets = otherPockets;
+          }
         } else {
           table.pocket === undefined;
         }
@@ -211,5 +236,9 @@ socket.on(
 function arrayEqual<T>(a: T[], b: T[]): boolean { return a.length === b.length && a.every((a, i) => a === b[i]); }
 function sortedUnique<T>(v: T[]): T[] { return Array.from(new Set(v)).sort(); }
 function assertNever(never: never) { throw new Error(never); }
+function formatHistogram(v: number[]) {
+  const sum = v.reduce((p, c) => p + c);
+  return v.map(x => Math.round(x / sum * 1000) / 10);
+}
 
 // client.socket.emit('hello', {wasap:'whee'}) // talks to server
