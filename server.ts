@@ -21,6 +21,7 @@ io.on('connection', s => {
       console.log({room, data});
       io.in(room).emit(room, data);
     })
-  })
+  });
+  // s.on('disconnect', () => {console.log('SOME ONE DISCONNECTED!!!')}) // we don't really handle this.
 });
 // io.on('hello', })

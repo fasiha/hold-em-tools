@@ -45,33 +45,34 @@ export const table = observable({
   players: [],
 } as Table);
 const Table = observer(function Table() {
-  if (!table.tableName) {
-    return ce('button', {
-      onClick: action(() => {
-        const res = prompt('Table name?');
-        if (res) { table.tableName = res; }
-      })
-    },
-              'Set table name');
-  }
-  if (!table.myName) {
-    return ce('button', {
-      onClick: action(() => {
-        const res = prompt('Your name?');
-        if (res) {
-          table.myName = res;
-          table.players = sortedUnique(table.players.concat(table.myName));
-          announce();
-        }
-      })
-    },
-              'Set your name');
-  }
-  const tableName = ce('p', null, `Table: ${table.tableName}`);
-  const myName = ce('p', null, `My name: ${table.myName}`);
-  const allPlayers = ce(
-      'div', null, table.players.length <= 1 ? ce('button', {onClick: () => announce()}, 'Announce') : 'Players here:',
-      ce('ol', null, ...table.players.map(n => ce('li', null, n === table.analysis ? `Me (${n})` : n))));
+  const tableNameButton = ce('button', {
+    onClick: action(() => {
+      const res = prompt('Change?');
+      if (res) { table.tableName = res; }
+    })
+  },
+                             'Set table name');
+  const myNameButton = ce('button', {
+    onClick: action(() => {
+      const newName = prompt('Change?');
+      if (newName) {
+        const oldName = table.myName;
+        table.myName = newName;
+        table.players = sortedUnique(table.players.concat(table.myName).filter(s => s !== oldName));
+        announce();
+      }
+    })
+  },
+                          'Set your name');
+
+  const notAnnounced = table.players.length <= 1;
+
+  const tableName = ce('p', null, `Table: ${table.tableName}`, notAnnounced ? tableNameButton : '');
+  const myName = ce('p', null, `My name: ${table.myName}`, notAnnounced ? myNameButton : '');
+  const allPlayers =
+      ce('div', null,
+         notAnnounced ? ce('button', {onClick: () => announce()}, 'Announce yourself at this table!') : 'Players here:',
+         ce('ol', null, ...table.players.map(n => ce('li', null, n === table.analysis ? `Me (${n})` : n))));
 
   let otherPocketsText: string[] = [];
   const {pocket, board, otherPockets} = table;
@@ -164,95 +165,95 @@ ReactDOM.render(ce(React.StrictMode, null, ce(React.Suspense, {fallback: ce('p',
 export const announce = action(function announce() {
   table.players = sortedUnique(table.players.concat(table.myName));
 
+  socket.on(
+      table.tableName,
+      action((m: Msg) => {
+        console.log('MSG RECEIVED!', m);
+        if (m.msgName === 'joining') {
+          // new player is announcing a join
+          if (!table.pocket && table.myName !== m.name) {
+            table.players = sortedUnique(table.players.concat(m.name));
+            const welcome: WelcomeMsg = {msgName: 'welcome', from: table.myName, players: table.players};
+            socket.emit(table.tableName, welcome);
+          }
+        } else if (m.msgName === 'welcome') {
+          // everyone is welcoming a new player
+          table.players = sortedUnique(table.players.concat(m.players));
+          if (!m.players.includes(table.myName)) {
+            const myJoiningMsg: JoiningMsg = {msgName: 'joining', name: table.myName};
+            socket.emit(table.tableName, myJoiningMsg);
+          }
+        } else if (m.msgName === 'pocket' || m.msgName === 'flop' || m.msgName === 'turn' || m.msgName === 'river' ||
+                   m.msgName === 'showdown') {
+          table.seed = m.seed;
+          if (arrayEqual(m.players, table.players) && table.players.includes(table.myName)) {
+            table.pocket = undefined;
+            table.board = undefined;
+            table.otherPockets = undefined;
+
+            const shorts = shortsString.split('');
+            shuffle(shorts, table.seed);
+
+            const otherPockets: Record<string, string[]> = {};
+
+            for (const name of table.players) {
+              const first = shorts.pop();
+              const second = shorts.pop();
+              if (!(first && second)) { throw new Error('ran out of cards for pocket?') }
+              if (name === table.myName) {
+                table.pocket = [first, second];
+              } else {
+                otherPockets[name] = [first, second];
+              }
+            }
+
+            if (m.msgName === 'pocket') {
+              table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+
+              return;
+            }
+
+            table.board = [];
+            for (let i = 0; i < 3; i++) {
+              const popped = shorts.pop();
+              if (!popped) { throw new Error('ran out of cards for flop?') }
+              table.board.push(popped);
+            }
+            if (m.msgName === 'flop') {
+              table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+              return;
+            }
+
+            const turn = shorts.pop();
+            if (!turn) { throw new Error('ran out of cards for turn?') }
+            table.board.push(turn);
+            if (m.msgName === 'turn') {
+              table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+              return;
+            }
+
+            const river = shorts.pop();
+            if (!river) { throw new Error('ran out of cards for river?') }
+            table.board.push(river);
+
+            if (m.msgName === 'river') {
+              table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
+            } else {
+              table.otherPockets = otherPockets;
+            }
+          } else {
+            table.pocket === undefined;
+          }
+        } else {
+          assertNever(m.msgName);
+        }
+      }),
+  );
+
   socket.emit('join-room', table.tableName);
   const myJoiningMsg: JoiningMsg = {msgName: 'joining', name: table.myName};
   socket.emit(table.tableName, myJoiningMsg);
 });
-
-socket.on(
-    table.tableName,
-    action((m: Msg) => {
-      console.log('MSG RECEIVED!', m);
-      if (m.msgName === 'joining') {
-        // new player is announcing a join
-        if (!table.pocket && table.myName !== m.name) {
-          table.players = sortedUnique(table.players.concat(m.name));
-          const welcome: WelcomeMsg = {msgName: 'welcome', from: table.myName, players: table.players};
-          socket.emit(table.tableName, welcome);
-        }
-      } else if (m.msgName === 'welcome') {
-        // everyone is welcoming a new player
-        table.players = sortedUnique(table.players.concat(m.players));
-        if (!m.players.includes(table.myName)) {
-          const myJoiningMsg: JoiningMsg = {msgName: 'joining', name: table.myName};
-          socket.emit(table.tableName, myJoiningMsg);
-        }
-      } else if (m.msgName === 'pocket' || m.msgName === 'flop' || m.msgName === 'turn' || m.msgName === 'river' ||
-                 m.msgName === 'showdown') {
-        table.seed = m.seed;
-        if (arrayEqual(m.players, table.players) && table.players.includes(table.myName)) {
-          table.pocket = undefined;
-          table.board = undefined;
-          table.otherPockets = undefined;
-
-          const shorts = shortsString.split('');
-          shuffle(shorts, table.seed);
-
-          const otherPockets: Record<string, string[]> = {};
-
-          for (const name of table.players) {
-            const first = shorts.pop();
-            const second = shorts.pop();
-            if (!(first && second)) { throw new Error('ran out of cards for pocket?') }
-            if (name === table.myName) {
-              table.pocket = [first, second];
-            } else {
-              otherPockets[name] = [first, second];
-            }
-          }
-
-          if (m.msgName === 'pocket') {
-            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
-
-            return;
-          }
-
-          table.board = [];
-          for (let i = 0; i < 3; i++) {
-            const popped = shorts.pop();
-            if (!popped) { throw new Error('ran out of cards for flop?') }
-            table.board.push(popped);
-          }
-          if (m.msgName === 'flop') {
-            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
-            return;
-          }
-
-          const turn = shorts.pop();
-          if (!turn) { throw new Error('ran out of cards for turn?') }
-          table.board.push(turn);
-          if (m.msgName === 'turn') {
-            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
-            return;
-          }
-
-          const river = shorts.pop();
-          if (!river) { throw new Error('ran out of cards for river?') }
-          table.board.push(river);
-
-          if (m.msgName === 'river') {
-            table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
-          } else {
-            table.otherPockets = otherPockets;
-          }
-        } else {
-          table.pocket === undefined;
-        }
-      } else {
-        assertNever(m.msgName);
-      }
-    }),
-);
 
 function arrayEqual<T>(a: T[], b: T[]): boolean { return a.length === b.length && a.every((a, i) => a === b[i]); }
 function sortedUnique<T>(v: T[]): T[] { return Array.from(new Set(v)).sort(); }
