@@ -7,6 +7,8 @@
     "build": "tsc -p .",
     "bundle": "browserify client.js -o client.bundle.js -s client",
     "watch": "fswatch -0 -o -l 0.1 client.js | xargs -0 -n 1 -I% npm run bundle",
+    "serve": "node server.js",
+    "start": "npm run serve",
     "test": "tape tests/test-*.js"
   },
   "keywords": [],
