@@ -199,7 +199,7 @@ export function compareHands(a: Hand, b: Hand): number {
   if (ascore !== bscore) { return ascore - bscore; }
   // tie-breakers
   if (aout.length !== bout.length) { throw new Error('cannot compare hands of unequal size'); }
-  let ret = aout.findIndex((a, i) => (bout as number[])[i] !== a);
+  let ret = aout.findIndex((a, i) => bout[i] !== a);
   if (ret === -1) { return 0; }
   return bout[ret] - aout[ret];
 }

@@ -4,7 +4,7 @@ import React, {createElement as ce} from 'react';
 import ReactDOM from 'react-dom';
 
 import {playerAnalysis} from './playerHelper';
-import {fastScore, initCards, shortToReadable} from "./skinnyRank";
+import {compareHands, fastScore, initCards, shortToReadable} from "./skinnyRank";
 
 const shuffle: ((v: string[], seed?: number) => string[]) = require('knuth-shuffle-seeded');
 const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Trips,Two pairs,Pair,High'.split(',');
@@ -73,14 +73,29 @@ const Table = observer(function Table() {
       'div', null, table.players.length <= 1 ? ce('button', {onClick: () => announce()}, 'Announce') : 'Players here:',
       ce('ol', null, ...table.players.map(n => ce('li', null, n))));
 
+  let otherPocketsText: string[] = [];
+  const {pocket, board, otherPockets} = table;
+  if (otherPockets && pocket && board) {
+    const player2hand = (name: string) =>
+        (name === table.myName ? pocket : otherPockets[name]).concat(board).sort().join('');
+    const sortedPlayers = table.players.slice().sort((a, b) => compareHands(player2hand(a), player2hand(b)));
+    for (const p of table.players) {
+      const idx = sortedPlayers.findIndex(x => x === p);
+      if (p === table.myName) {
+        const result = shortsToReadableScore(pocket.concat(board));
+        otherPocketsText.push(
+            `Me: ${pocket.map(shortToReadable).join(' ')}  → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`)
+      } else {
+        const result = shortsToReadableScore(otherPockets[p].concat(board));
+        otherPocketsText.push(
+            `${p}: ${otherPockets[p].map(shortToReadable).join(' ')} → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`);
+      }
+    }
+  }
   let cards =
       ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + table.pocket.map(shortToReadable).join(' ')) : ''),
          ce('p', null, table.board ? ('Board: ' + table.board.map(shortToReadable).join(' ')) : ''),
-         ce('ol', null,
-            ...Object.entries(table.otherPockets || {})
-                .map(([k, v]) => ce('li', null,
-                                    `${k} : ${v.map(shortToReadable).join(' ')} → ${
-                                        shortsToReadableScore(v.concat(table.board || []))}`))));
+         ce('ol', null, ...otherPocketsText.map(o => ce('li', null, o))));
 
   let buttonText = '';
   let onClick: () => void = () => {};
