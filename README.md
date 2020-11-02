@@ -6,9 +6,9 @@ See the blog post, [Learning about risk, for kids and grownups](https://fasiha.g
 
 Play at **https://callfaye.glitch.me/**. 
 
-Here's what the app looks like on mobile:
+Here's what the app looks like, with three browsers standing in for three users:
 
-![Call Faye mobile](callfaye-mobile.png)
+![Call Faye animation](callfaye.gif)
 
 To play:
 - Familiarize yourself with Texas hold 'em basics: [Pagat](https://www.pagat.com/poker/variants/texasholdem.html)
