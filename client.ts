@@ -1,4 +1,4 @@
-import {action, autorun, observable, toJS} from "mobx";
+import {action, observable, toJS} from "mobx";
 import {observer} from 'mobx-react-lite';
 import React, {createElement as ce} from 'react';
 import ReactDOM from 'react-dom';
@@ -74,7 +74,7 @@ const Table = observer(function Table() {
          notAnnounced ? ce('button', {onClick: () => announce()}, 'Announce yourself at this table!') : 'Players here:',
          ce('ol', null, ...table.players.map(n => ce('li', null, n === table.analysis ? `Me (${n})` : n))));
 
-  let otherPocketsText: string[] = [];
+  let otherPocketsText: (string|ReturnType<typeof ce>)[][] = [];
   const {pocket, board, otherPockets} = table;
   if (otherPockets && pocket && board) {
     const player2hand = (name: string) =>
@@ -84,17 +84,22 @@ const Table = observer(function Table() {
       const idx = sortedPlayers.findIndex(x => x === p);
       if (p === table.myName) {
         const result = shortsToReadableScore(pocket.concat(board));
-        otherPocketsText.push(`Me (${p}): ${shortsToEmoji(pocket)}  → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`)
+        otherPocketsText.push(
+            [`Me (${p}): `, ...shortsToEmoji(pocket), ` → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`])
       } else {
         const result = shortsToReadableScore(otherPockets[p].concat(board));
         otherPocketsText.push(
-            `${p}: ${shortsToEmoji(otherPockets[p])} → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`);
+            [`${p}: `, ...shortsToEmoji(otherPockets[p]), ` → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`]);
       }
     }
   }
-  let cards = ce('div', null, ce('p', null, table.pocket ? ('Pocket: ' + shortsToEmoji(table.pocket)) : ''),
-                 ce('p', null, table.board ? ('Board: ' + shortsToEmoji(table.board)) : ''),
-                 ce('ol', null, ...otherPocketsText.map(o => ce('li', null, o))));
+  let cards = ce(
+      'div',
+      null,
+      ce('p', null, ...(table.pocket ? ['Pocket: ', ...shortsToEmoji(table.pocket)] : [])),
+      ce('p', null, ...(table.board ? ['Board: ', ...shortsToEmoji(table.board)] : [])),
+      ce('ol', null, ...otherPocketsText.map(o => ce('li', null, ...o))),
+  );
 
   let buttonText = '';
   let onClick: () => void = () => {};
@@ -270,10 +275,9 @@ const suitToEmoji: Record<string, string> = {
   s: '💐'
 };
 function shortsToEmoji(v: string[]) {
-  return v.map(shortToReadable)
-      .map(s => {
-        const fin = s[s.length - 1];
-        return s.slice(0, -1) + (suitToEmoji[fin] || fin);
-      })
-      .join(' ');
+  return v.map(shortToReadable).map(s => {
+    const fin = s[s.length - 1];
+    const rank = ce('span', {className: 'card-rank'}, s.slice(0, -1));
+    return ce('span', {className: 'card'}, rank, ce('span', {className: 'card-suit'}, (suitToEmoji[fin] || fin)));
+  });
 }

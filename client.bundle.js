@@ -59,15 +59,15 @@ const Table = mobx_react_lite_1.observer(function Table() {
             const idx = sortedPlayers.findIndex(x => x === p);
             if (p === exports.table.myName) {
                 const result = shortsToReadableScore(pocket.concat(board));
-                otherPocketsText.push(`Me (${p}): ${shortsToEmoji(pocket)}  → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`);
+                otherPocketsText.push([`Me (${p}): `, ...shortsToEmoji(pocket), ` → ${result}: #${idx + 1}${idx === 0 ? '!!!' : ''}`]);
             }
             else {
                 const result = shortsToReadableScore(otherPockets[p].concat(board));
-                otherPocketsText.push(`${p}: ${shortsToEmoji(otherPockets[p])} → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`);
+                otherPocketsText.push([`${p}: `, ...shortsToEmoji(otherPockets[p]), ` → ${result}: #${idx + 1}${idx === 0 ? '!' : ''}`]);
             }
         }
     }
-    let cards = react_1.createElement('div', null, react_1.createElement('p', null, exports.table.pocket ? ('Pocket: ' + shortsToEmoji(exports.table.pocket)) : ''), react_1.createElement('p', null, exports.table.board ? ('Board: ' + shortsToEmoji(exports.table.board)) : ''), react_1.createElement('ol', null, ...otherPocketsText.map(o => react_1.createElement('li', null, o))));
+    let cards = react_1.createElement('div', null, react_1.createElement('p', null, ...(exports.table.pocket ? ['Pocket: ', ...shortsToEmoji(exports.table.pocket)] : [])), react_1.createElement('p', null, ...(exports.table.board ? ['Board: ', ...shortsToEmoji(exports.table.board)] : [])), react_1.createElement('ol', null, ...otherPocketsText.map(o => react_1.createElement('li', null, ...o))));
     let buttonText = '';
     let onClick = () => { };
     if (exports.table.players.length > 1) {
@@ -244,12 +244,11 @@ const suitToEmoji = {
     s: '💐'
 };
 function shortsToEmoji(v) {
-    return v.map(skinnyRank_1.shortToReadable)
-        .map(s => {
+    return v.map(skinnyRank_1.shortToReadable).map(s => {
         const fin = s[s.length - 1];
-        return s.slice(0, -1) + (suitToEmoji[fin] || fin);
-    })
-        .join(' ');
+        const rank = react_1.createElement('span', { className: 'card-rank' }, s.slice(0, -1));
+        return react_1.createElement('span', { className: 'card' }, rank, react_1.createElement('span', { className: 'card-suit' }, (suitToEmoji[fin] || fin)));
+    });
 }
 
 },{"./playerHelper":42,"./skinnyRank":43,"knuth-shuffle-seeded":9,"mobx":24,"mobx-react-lite":11,"react":34,"react-dom":31}],2:[function(require,module,exports){
