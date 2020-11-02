@@ -22,7 +22,7 @@ const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Tr
 const shortsString = skinnyRank_1.initCards().shorts.join('');
 exports.socket = io();
 exports.table = mobx_1.observable({
-    tableName: 'default',
+    tableName: Math.random().toString(36).slice(2).slice(0, 6),
     myName: Math.random().toString(36).slice(2).slice(0, 4),
     players: [],
 });

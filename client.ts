@@ -40,7 +40,7 @@ interface DealMsg {
 type Msg = JoiningMsg|WelcomeMsg|DealMsg;
 
 export const table = observable({
-  tableName: 'default',
+  tableName: Math.random().toString(36).slice(2).slice(0, 6),
   myName: Math.random().toString(36).slice(2).slice(0, 4),
   players: [],
 } as Table);
