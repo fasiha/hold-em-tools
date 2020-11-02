@@ -13,15 +13,17 @@ app.use(express_1.default.static('.'));
 const server = app.listen(port, () => console.log(`Server started, localhost:${port}`));
 const io = new socket_io_1.default(server);
 io.on('connection', s => {
-    let tableName = '';
     console.log('connected');
-    s.on('join-room', (room) => {
-        console.log('asked to join ' + room);
-        tableName = room;
-        s.join(room);
-        s.on(room, (data) => {
-            console.log({ room, data });
-            io.in(room).emit(room, data);
+    s.on('play-hold-em', (data) => {
+        const room = data.tableName;
+        s.join(room, e => {
+            if (!e) {
+                console.log('received', data);
+                io.in(room).emit(room, data);
+            }
+            else {
+                console.error('ERROR', e);
+            }
         });
     });
     // s.on('disconnect', () => {console.log('SOME ONE DISCONNECTED!!!')}) // we don't really handle this.

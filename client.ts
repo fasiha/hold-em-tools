@@ -11,6 +11,7 @@ const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Tr
 const shortsString = initCards().shorts.join('');
 
 export const socket = io();
+const SOCKETIO_EVENT = 'play-hold-em';
 
 interface Table {
   tableName: string;
@@ -25,15 +26,18 @@ interface Table {
 
 interface JoiningMsg {
   msgName: 'joining';
+  tableName: string;
   name: string;
 }
 interface WelcomeMsg {
   msgName: 'welcome';
+  tableName: string;
   from: string;
   players: string[]; // will include `from` and new joiner (if any)
 }
 interface DealMsg {
   msgName: 'pocket'|'flop'|'turn'|'river'|'showdown';
+  tableName: string;
   players: string[];
   seed: number;
 }
@@ -112,36 +116,37 @@ const Table = observer(function Table() {
         table.pocket = undefined;
         table.otherPockets = undefined;
         table.analysis = undefined;
-        const msg: DealMsg = {msgName: 'pocket', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg);
+        const msg: DealMsg = {msgName: 'pocket', tableName: table.tableName, players: table.players, seed: table.seed};
+        socket.emit(SOCKETIO_EVENT, msg);
       };
     } else if (!table.board) {
       buttonText = 'Deal flop';
       onClick = () => {
         if (!table.seed) { return; }
-        const msg: DealMsg = {msgName: 'flop', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg)
+        const msg: DealMsg = {msgName: 'flop', tableName: table.tableName, players: table.players, seed: table.seed};
+        socket.emit(SOCKETIO_EVENT, msg)
       };
     } else if (table.board.length === 3) {
       buttonText = 'Deal turn'
       onClick = () => {
         if (!table.seed) { return; }
-        const msg: DealMsg = {msgName: 'turn', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg)
+        const msg: DealMsg = {msgName: 'turn', tableName: table.tableName, players: table.players, seed: table.seed};
+        socket.emit(SOCKETIO_EVENT, msg)
       };
     } else if (table.board.length === 4) {
       buttonText = 'Deal river'
       onClick = () => {
         if (!table.seed) { return; }
-        const msg: DealMsg = {msgName: 'river', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg)
+        const msg: DealMsg = {msgName: 'river', tableName: table.tableName, players: table.players, seed: table.seed};
+        socket.emit(SOCKETIO_EVENT, msg)
       };
     } else {
       buttonText = 'Showdown!'
       onClick = () => {
         if (!table.seed) { return; }
-        const msg: DealMsg = {msgName: 'showdown', players: table.players, seed: table.seed};
-        socket.emit(table.tableName, msg)
+        const msg:
+            DealMsg = {msgName: 'showdown', tableName: table.tableName, players: table.players, seed: table.seed};
+        socket.emit(SOCKETIO_EVENT, msg)
       };
     }
   }
@@ -149,7 +154,6 @@ const Table = observer(function Table() {
   let analysisComp = ce('ul');
   const analysis = table.analysis;
   if (analysis) {
-    console.log(toJS(analysis), '!');
     const my = analysis.my ? formatHistogram(analysis.my) : [];
     const rest = analysis.rest ? formatHistogram(analysis.rest) : [];
     const grid = ce(
@@ -193,15 +197,16 @@ export const announce = action(function announce() {
           // new player is announcing a join
           if (!table.pocket && table.myName !== m.name) {
             table.players = sortedUnique(table.players.concat(m.name));
-            const welcome: WelcomeMsg = {msgName: 'welcome', from: table.myName, players: table.players};
-            socket.emit(table.tableName, welcome);
+            const welcome: WelcomeMsg =
+                {msgName: 'welcome', tableName: table.tableName, from: table.myName, players: table.players};
+            socket.emit(SOCKETIO_EVENT, welcome);
           }
         } else if (m.msgName === 'welcome') {
           // everyone is welcoming a new player
           table.players = sortedUnique(table.players.concat(m.players));
           if (!m.players.includes(table.myName)) {
-            const myJoiningMsg: JoiningMsg = {msgName: 'joining', name: table.myName};
-            socket.emit(table.tableName, myJoiningMsg);
+            const myJoiningMsg: JoiningMsg = {msgName: 'joining', tableName: table.tableName, name: table.myName};
+            socket.emit(SOCKETIO_EVENT, myJoiningMsg);
           }
         } else if (m.msgName === 'pocket' || m.msgName === 'flop' || m.msgName === 'turn' || m.msgName === 'river' ||
                    m.msgName === 'showdown') {
@@ -229,7 +234,6 @@ export const announce = action(function announce() {
 
             if (m.msgName === 'pocket') {
               table.analysis = playerAnalysis((table.pocket || []).concat(table.board || []));
-
               return;
             }
 
@@ -270,9 +274,8 @@ export const announce = action(function announce() {
       }),
   );
 
-  socket.emit('join-room', table.tableName);
-  const myJoiningMsg: JoiningMsg = {msgName: 'joining', name: table.myName};
-  socket.emit(table.tableName, myJoiningMsg);
+  const myJoiningMsg: JoiningMsg = {msgName: 'joining', tableName: table.tableName, name: table.myName};
+  socket.emit(SOCKETIO_EVENT, myJoiningMsg);
 });
 
 function arrayEqual<T>(a: T[], b: T[]): boolean { return a.length === b.length && a.every((a, i) => a === b[i]); }

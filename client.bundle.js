@@ -21,6 +21,7 @@ const shuffle = require('knuth-shuffle-seeded');
 const handNames = 'Royal flush,Straight flush,Quads,Full house,Flush,Straight,Trips,Two pairs,Pair,High'.split(',');
 const shortsString = skinnyRank_1.initCards().shorts.join('');
 exports.socket = io();
+const SOCKETIO_EVENT = 'play-hold-em';
 exports.table = mobx_1.observable({
     tableName: Math.random().toString(36).slice(2).slice(0, 6),
     myName: Math.random().toString(36).slice(2).slice(0, 4),
@@ -79,8 +80,8 @@ const Table = mobx_react_lite_1.observer(function Table() {
                 exports.table.pocket = undefined;
                 exports.table.otherPockets = undefined;
                 exports.table.analysis = undefined;
-                const msg = { msgName: 'pocket', players: exports.table.players, seed: exports.table.seed };
-                exports.socket.emit(exports.table.tableName, msg);
+                const msg = { msgName: 'pocket', tableName: exports.table.tableName, players: exports.table.players, seed: exports.table.seed };
+                exports.socket.emit(SOCKETIO_EVENT, msg);
             };
         }
         else if (!exports.table.board) {
@@ -89,8 +90,8 @@ const Table = mobx_react_lite_1.observer(function Table() {
                 if (!exports.table.seed) {
                     return;
                 }
-                const msg = { msgName: 'flop', players: exports.table.players, seed: exports.table.seed };
-                exports.socket.emit(exports.table.tableName, msg);
+                const msg = { msgName: 'flop', tableName: exports.table.tableName, players: exports.table.players, seed: exports.table.seed };
+                exports.socket.emit(SOCKETIO_EVENT, msg);
             };
         }
         else if (exports.table.board.length === 3) {
@@ -99,8 +100,8 @@ const Table = mobx_react_lite_1.observer(function Table() {
                 if (!exports.table.seed) {
                     return;
                 }
-                const msg = { msgName: 'turn', players: exports.table.players, seed: exports.table.seed };
-                exports.socket.emit(exports.table.tableName, msg);
+                const msg = { msgName: 'turn', tableName: exports.table.tableName, players: exports.table.players, seed: exports.table.seed };
+                exports.socket.emit(SOCKETIO_EVENT, msg);
             };
         }
         else if (exports.table.board.length === 4) {
@@ -109,8 +110,8 @@ const Table = mobx_react_lite_1.observer(function Table() {
                 if (!exports.table.seed) {
                     return;
                 }
-                const msg = { msgName: 'river', players: exports.table.players, seed: exports.table.seed };
-                exports.socket.emit(exports.table.tableName, msg);
+                const msg = { msgName: 'river', tableName: exports.table.tableName, players: exports.table.players, seed: exports.table.seed };
+                exports.socket.emit(SOCKETIO_EVENT, msg);
             };
         }
         else {
@@ -119,15 +120,14 @@ const Table = mobx_react_lite_1.observer(function Table() {
                 if (!exports.table.seed) {
                     return;
                 }
-                const msg = { msgName: 'showdown', players: exports.table.players, seed: exports.table.seed };
-                exports.socket.emit(exports.table.tableName, msg);
+                const msg = { msgName: 'showdown', tableName: exports.table.tableName, players: exports.table.players, seed: exports.table.seed };
+                exports.socket.emit(SOCKETIO_EVENT, msg);
             };
         }
     }
     let analysisComp = react_1.createElement('ul');
     const analysis = exports.table.analysis;
     if (analysis) {
-        console.log(mobx_1.toJS(analysis), '!');
         const my = analysis.my ? formatHistogram(analysis.my) : [];
         const rest = analysis.rest ? formatHistogram(analysis.rest) : [];
         const grid = react_1.createElement('table', null, react_1.createElement('caption', null, 'Probabilities'), react_1.createElement('thead', null, react_1.createElement('tr', null, ...['Hand', 'Me', 'Others'].map(s => react_1.createElement('th', { scope: 'col' }, s)))), react_1.createElement('tbody', null, ...handNames.map((hand, i) => react_1.createElement('tr', null, react_1.createElement('th', { scope: 'row' }, hand), react_1.createElement('td', null, my[i] || '—'), react_1.createElement('td', null, rest[i] || '—')))));
@@ -145,16 +145,16 @@ exports.announce = mobx_1.action(function announce() {
             // new player is announcing a join
             if (!exports.table.pocket && exports.table.myName !== m.name) {
                 exports.table.players = sortedUnique(exports.table.players.concat(m.name));
-                const welcome = { msgName: 'welcome', from: exports.table.myName, players: exports.table.players };
-                exports.socket.emit(exports.table.tableName, welcome);
+                const welcome = { msgName: 'welcome', tableName: exports.table.tableName, from: exports.table.myName, players: exports.table.players };
+                exports.socket.emit(SOCKETIO_EVENT, welcome);
             }
         }
         else if (m.msgName === 'welcome') {
             // everyone is welcoming a new player
             exports.table.players = sortedUnique(exports.table.players.concat(m.players));
             if (!m.players.includes(exports.table.myName)) {
-                const myJoiningMsg = { msgName: 'joining', name: exports.table.myName };
-                exports.socket.emit(exports.table.tableName, myJoiningMsg);
+                const myJoiningMsg = { msgName: 'joining', tableName: exports.table.tableName, name: exports.table.myName };
+                exports.socket.emit(SOCKETIO_EVENT, myJoiningMsg);
             }
         }
         else if (m.msgName === 'pocket' || m.msgName === 'flop' || m.msgName === 'turn' || m.msgName === 'river' ||
@@ -225,9 +225,8 @@ exports.announce = mobx_1.action(function announce() {
             assertNever(m.msgName);
         }
     }));
-    exports.socket.emit('join-room', exports.table.tableName);
-    const myJoiningMsg = { msgName: 'joining', name: exports.table.myName };
-    exports.socket.emit(exports.table.tableName, myJoiningMsg);
+    const myJoiningMsg = { msgName: 'joining', tableName: exports.table.tableName, name: exports.table.myName };
+    exports.socket.emit(SOCKETIO_EVENT, myJoiningMsg);
 });
 function arrayEqual(a, b) { return a.length === b.length && a.every((a, i) => a === b[i]); }
 function sortedUnique(v) { return Array.from(new Set(v)).sort(); }
