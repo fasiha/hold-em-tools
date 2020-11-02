@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p .",
+    "prod-bundle": "browserify client.js -g [ envify --NODE_ENV production ] -g uglifyify | terser --compress --mangle > client.bundle.js",
     "bundle": "browserify client.js -o client.bundle.js -s client",
     "watch-client": "fswatch -0 -o -l 0.1 client.js | xargs -0 -n 1 -I% npm run bundle",
     "watch-server": "nodemon -w server.js server.js",
@@ -27,9 +28,12 @@
     "@types/socket.io": "^2.1.11",
     "@types/socket.io-client": "^1.4.34",
     "browserify": "^17.0.0",
+    "envify": "^4.1.0",
     "nodemon": "^2.0.6",
     "tape": "^4.9.2",
-    "typescript": "^3.2.4"
+    "terser": "^5.3.8",
+    "typescript": "^3.2.4",
+    "uglifyify": "^5.0.2"
   },
   "dependencies": {
     "compression": "^1.7.4",

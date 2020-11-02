@@ -28,4 +28,3 @@ io.on('connection', s => {
     });
     // s.on('disconnect', () => {console.log('SOME ONE DISCONNECTED!!!')}) // we don't really handle this.
 });
-// io.on('hello', })

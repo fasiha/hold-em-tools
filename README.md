@@ -1,339 +1,53 @@
-# hold-em-tools
+# Call Faye: Texas hold 'em helper
 
-## Installation
-Ensure you have both [Git](https://git-scm.com/) and [Node.js](https://nodejs.org/) installed. Then run the following set of commands in your command-line prompt  (i.e., Terminal in macOS, xterm in Linux, Command Prompt in Windows, etc.), noting that the `$` symbol just indicates the start of the prompt and is not intended to be typed.
-```
-$ git clone https://github.com/fasiha/hold-em-tools.git
-$ cd hold-em-tools
-$ npm install
-$ npm run build
+See the blog post, [Learning about risk, for kids and grownups](https://fasiha.github.io/post/risk-for-kids-and-grownups/), but in a nutshell, this repository contains 
+- a Texas hold 'em hand anumerator and analyzer, and
+- a web application to facilitate in-person poker play by showing players their odds as they deal cards—you have to track bets and folds yourselves in meatspace. Easy to deploy on your own cheap web server solution.
+
+Play at **https://callfaye.glitch.me/**. 
+
+Here's what the app looks like on mobile:
+
+![Call Faye mobile](callfaye-mobile.png)
+
+To play:
+- Familiarize yourself with Texas hold 'em basics: [Pagat](https://www.pagat.com/poker/variants/texasholdem.html)
+- Go to https://callfaye.glitch.me/
+- (open multiple tabs if you don't have a friend hany)
+- Get everyone to enter the same table name
+- Get everyone to click 'Announce'
+- All players will see each other
+- Anyone can deal cards by clicking the appropriate button
+- Your hand's probabilities for each final hand ranking will be printed out in a table
+- Your probabilities will be accompanied by other players' probabilities for each rankings also (taking into account the fact that they can't have your pocket cards)
+- You and your friends take care of betting and folding.
+
+## Installation and run
+Ensure you have both [Git](https://git-scm.com/) and [Node.js](https://nodejs.org/) installed. Then run the following set of commands in your command-line prompt  (i.e., Terminal in macOS, xterm in Linux, Command Prompt in Windows, etc.):
+```console
+git clone https://github.com/fasiha/hold-em-tools.git
+cd hold-em-tools
+npm install
+npm run build
 ```
 The `git` command comes from the eponymous program you have installed, while `npm` was installed by Node.js.
 
-## Run
+Then, to start the Call Faye server, run
 ```
-$ node skinnyRank.js 7
-$ node histogramBinfile.js --max-old-space-size=4096 2 3 4 5 6
-$ node server.js
-$ node deal.js 0 # run this in another tab
+npm run start
 ```
-This will:
-1. first generate a 1.1 GB file, `handsScore-7.bin`, containing all 134 million seven-card hands as well as the best ranking (one through ten, one for royal flush, ten for high card)—so eight bytes time 133784560 divided by 1024 bytes per kilobyte, and divided by 1024 kilobytes per megabyte yields 1020 megabytes.
-2. Then generate five files, named `map-r-7-n-2.ldjson`, `map-r-7-n-3.ldjson`, and so on through `map-r-7-n-6.ldjson`, i.e., the "n" number goes from 2 to 6. These line-delimited JSON files (where each line is valid JSON) contains each "n"-card hand for "n" running from 2 to 6 (inclusive), and the total number of royal flushes, straight flushes, etc., that can be made with those "n" cards out of the universe of seven-card hands. The "n" = 2 file contains 52-choose-2, or 1326, rows. The "n" = 6 file contains 52-choose-6, or more than twenty million, rows.
-1. Because of some [internal limitations](https://stackoverflow.com/q/54452896/500207) in Node.js, it's necessary to use a secondary database mapping each 2- to 6-card hand to the frequency table of how often each card is part of a royal flush, straight flush, etc. (for all ten rankings of poker hands). This step puts all that information inside Leveldb and serves this data as a webserver.
-1. Finally, **in another terminal**, the last script will deal four players seven cards, rank them best to worst, and show you some histogram analysis of each hand.
 
-N.B. If you run `$ node deal.js 0` several times, you'll see the exact same deal. If you want to shuffle and redeal, change the `0` to another number: this number is the random seed.
+To run on Glitch, simply clone this repository and it should work.
 
-Currently, the final printout of the program results in the following Markdown, letting me analyze each player's hand, starting with their two pocket cards, then the board as it gets dealt out. At each point in the game, I can see both (1) the histogram of rankings based on all the cards I can see (my pocket cards and the board) as well as (2) the histogram of other players based on only the board. These two are separated by ×, so a cell in the table below, “8×21” for player 1 after seeing the flop in the “2p” (two-pairs) means, of the five cards they have, there is 8% chance that they'll end up with a two-pair at the end of the game, ***but*** there's a 21% chance that another player might get a two-pair, based on just the board so far.
+## Dev
+### Beckend serve
+The server runs a Socket.io server that just connects together clients at the same poker table. It knows absolutely nothing about poker.
 
-### Player 1
-| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |   2p |    pa |    hi |
-| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ---- | ----- | ----- |
-|  2c 6s = hi                 |   <1 |   <1 |   <1 |    2 |    2 |   4 |   4 |   23 |    45 |    19 |
-|  2c 6s× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 0×<1 | 0×4 | 1×4 | 8×21 | 49×47 | 41×21 |
-|  2c 6s× Qh 7c Js 4c = hi    |  0×0 | 0×<1 | 0×<1 | 0×<1 | 0×<1 | 0×2 | 0×3 | 0×17 | 39×50 | 61×27 |
-|  2c 6s× Qh 7c Js 4c 3d = hi |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×1 |  ×2 |   ×9 |   ×50 |   ×38 |
+### Frontend client
+The frontend is a MobX & React app, residing in `client.ts`. It leverages `playerHelper.ts` to compute probabilities of final hand rankings at each point in the game, either using the pre-computed data or re-computing on the fly. It requires pre-computed enumerations of final hand rankings' probabilities for all 2- and 3-card combinations, because these take too long to compute on the fly. *These are included in the repository*, but if you want to regenerate them, run
+```
+node skinnyRank.js
+```
+This will recreate `map-r-7-n-2.json` and `map-r-7-n-3.json`. It might take several hours, but only has to be done once.
 
-### Player 2
-| Percents                    |   rf |   sf |    qu |   fh |    fl |  st |  tr |    2p |    pa |   hi |
-| --------------------------- | ---- | ---- | ----- | ---- | ----- | --- | --- | ----- | ----- | ---- |
-|  5c Qc = hi                 |   <1 |   <1 |    <1 |    2 |     7 |   3 |   4 |    22 |    43 |   18 |
-|  5c Qc× Qh 7c Js = pa       | 0×<1 | 0×<1 | <1×<1 |  2×1 |  4×<1 | 0×4 | 7×3 | 37×19 | 50×48 | 0×24 |
-|  5c Qc× Qh 7c Js 4c = pa    |  0×0 |  0×0 |  0×<1 | 0×<1 | 20×<1 | 0×2 | 4×3 | 24×15 | 52×50 | 0×30 |
-|  5c Qc× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |    ×0 |   ×0 |    ×0 |  ×1 |  ×1 |    ×8 |   ×48 |  ×41 |
-
-### Player 3
-| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |    2p |    pa |    hi |
-| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ----- | ----- | ----- |
-|  4h 5h = hi                 |   <1 |   <1 |   <1 |    2 |    6 |   9 |   4 |    22 |    41 |    16 |
-|  4h 5h× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 4×<1 | 3×4 | 1×4 |  8×21 | 47×47 | 36×21 |
-|  4h 5h× Qh 7c Js 4c = pa    |  0×0 | 0×<1 | 0×<1 | 0×<1 |  0×1 | 0×2 | 4×3 | 26×15 | 70×49 |  0×30 |
-|  4h 5h× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×1 |  ×1 |    ×8 |   ×48 |   ×41 |
-
-### Player 4
-| Percents                    |   rf |   sf |   qu |   fh |   fl |  st |  tr |   2p |    pa |    hi |
-| --------------------------- | ---- | ---- | ---- | ---- | ---- | --- | --- | ---- | ----- | ----- |
-|  Kd 3h = hi                 |   <1 |   <1 |   <1 |    2 |    2 |   2 |   4 |   23 |    46 |    20 |
-|  Kd 3h× Qh 7c Js = hi       | 0×<1 | 0×<1 | 0×<1 |  0×2 | 0×<1 | 3×4 | 1×4 | 8×21 | 49×47 | 38×22 |
-|  Kd 3h× Qh 7c Js 4c = hi    |  0×0 | 0×<1 | 0×<1 | 0×<1 |  0×1 | 0×2 | 0×3 | 0×17 | 39×50 | 61×27 |
-|  Kd 3h× Qh 7c Js 4c 3d = pa |   ×0 |   ×0 |   ×0 |   ×0 |   ×0 |  ×2 |  ×1 |   ×8 |   ×48 |   ×41 |
-
-### Finally
-1. Player 2 ::  5c Qc |  Qh 7c Js 4c 3d => pa
-2. Player 3 ::  4h 5h |  Qh 7c Js 4c 3d => pa
-3. Player 4 ::  Kd 3h |  Qh 7c Js 4c 3d => pa
-4. Player 1 ::  2c 6s |  Qh 7c Js 4c 3d => hi
-
----
-
-With the above information, one can readily compute naive [Kelly bets](https://en.wikipedia.org/wiki/Kelly_criterion) for each round of betting, and then get into the non-card aspects of the gameplay.
-
-The abbreviations I use are:
-- rf, royal flush
-- sf, straight flush
-- qu, “quad” or four-of-a-kind
-- fh, full house
-- fl, flush
-- st, straight
-- tr, “trip” or three-of-a-kind
-- 2p, two pairs
-- pa, one pair
-- hi, high card
-
----
-
-For reference, here are the probabilities of pockets (first two cards, or hole cards) when they're suited and when unsuited.
-
-| %      | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
-| ------ | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-|  Ac Ad | <1 | <1 | <1 |  9 |  2 |  1 | 12 | 40 | 36 |  0 |
-|  Ac 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Ac 3d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac 4d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac 5d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac 6d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Ac 7d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Ac 8d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Ac 9d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Ac10d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac Jd | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac Qd | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Ac Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c 2d | <1 | <1 | <1 |  9 |  2 |  1 | 12 | 40 | 36 |  0 |
-|  2c 3d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  2c 4d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  2c 5d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  2c 6d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  2c 7d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c 8d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c 9d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c10d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  2c Jd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  2c Qd | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  2c Kd | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  3c Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  3c 2d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  3c 3d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 40 | 36 |  0 |
-|  3c 4d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  3c 5d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  3c 6d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  3c 7d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  3c 8d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  3c 9d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  3c10d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  3c Jd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  3c Qd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  3c Kd | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  4c Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  4c 2d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  4c 3d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  4c 4d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 40 | 35 |  0 |
-|  4c 5d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  4c 6d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  4c 7d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  4c 8d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  4c 9d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  4c10d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-|  4c Jd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  4c Qd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  4c Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  5c Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  5c 2d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  5c 3d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  5c 4d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  5c 5d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-|  5c 6d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  5c 7d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  5c 8d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  5c 9d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  5c10d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-|  5c Jd | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-|  5c Qd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  5c Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  6c Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  6c 2d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  6c 3d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  6c 4d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  6c 5d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  6c 6d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-|  6c 7d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  6c 8d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  6c 9d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  6c10d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  6c Jd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  6c Qd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  6c Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  7c Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  7c 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  7c 3d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  7c 4d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  7c 5d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  7c 6d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  7c 7d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-|  7c 8d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  7c 9d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  7c10d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  7c Jd | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  7c Qd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  7c Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  8c Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  8c 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  8c 3d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  8c 4d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  8c 5d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  8c 6d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  8c 7d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  8c 8d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-|  8c 9d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  8c10d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  8c Jd | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  8c Qd | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  8c Kd | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  9c Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  9c 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  9c 3d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  9c 4d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  9c 5d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  9c 6d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  9c 7d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-|  9c 8d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  9c 9d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-|  9c10d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  9c Jd | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  9c Qd | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  9c Kd | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-| 10c Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-| 10c 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-| 10c 3d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-| 10c 4d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-| 10c 5d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-| 10c 6d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-| 10c 7d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-| 10c 8d | <1 | <1 | <1 |  2 |  2 |  8 |  4 | 22 | 43 | 18 |
-| 10c 9d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-| 10c10d | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 39 | 35 |  0 |
-| 10c Jd | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-| 10c Qd | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-| 10c Kd | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  Jc Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Jc 2d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Jc 3d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Jc 4d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Jc 5d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 46 | 19 |
-|  Jc 6d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Jc 7d | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  Jc 8d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 18 |
-|  Jc 9d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  Jc10d | <1 | <1 | <1 |  2 |  2 |  9 |  4 | 22 | 43 | 17 |
-|  Jc Jd | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 40 | 35 |  0 |
-|  Jc Qd | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  Jc Kd | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  Qc Ad | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Qc 2d | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  Qc 3d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Qc 4d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Qc 5d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Qc 6d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Qc 7d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Qc 8d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Qc 9d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  Qc10d | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  Qc Jd | <1 | <1 | <1 |  2 |  2 |  7 |  4 | 22 | 44 | 18 |
-|  Qc Qd | <1 | <1 | <1 |  9 |  2 |  2 | 12 | 40 | 36 |  0 |
-|  Qc Kd | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  Kc Ad | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Kc 2d | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  Kc 3d | <1 | <1 | <1 |  2 |  2 |  2 |  4 | 23 | 46 | 20 |
-|  Kc 4d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Kc 5d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 19 |
-|  Kc 6d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Kc 7d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Kc 8d | <1 | <1 | <1 |  2 |  2 |  3 |  4 | 23 | 46 | 20 |
-|  Kc 9d | <1 | <1 | <1 |  2 |  2 |  4 |  4 | 23 | 45 | 19 |
-|  Kc10d | <1 | <1 | <1 |  2 |  2 |  6 |  4 | 23 | 44 | 19 |
-|  Kc Jd | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  Kc Qd | <1 | <1 | <1 |  2 |  2 |  5 |  4 | 23 | 45 | 19 |
-|  Kc Kd | <1 | <1 | <1 |  9 |  2 |  1 | 12 | 40 | 36 |  0 |
-
-| %      | rf | sf | qu | fh | fl | st | tr | 2p | pa | hi |
-| ------ | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-|  Ac 2c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  Ac 3c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  Ac 4c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  Ac 5c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  Ac 6c | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  Ac 7c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  Ac 8c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  Ac 9c | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  Ac10c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  Ac Jc | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  Ac Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  Ac Kc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  2c 3c | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 18 |
-|  2c 4c | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  2c 5c | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  2c 6c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  2c 7c | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  2c 8c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  2c 9c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  2c10c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  2c Jc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  2c Qc | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  2c Kc | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 19 |
-|  3c 4c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 42 | 17 |
-|  3c 5c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-|  3c 6c | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  3c 7c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  3c 8c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  3c 9c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  3c10c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  3c Jc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  3c Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  3c Kc | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  4c 5c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  4c 6c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 17 |
-|  4c 7c | <1 | <1 | <1 |  2 |  6 |  6 |  4 | 22 | 42 | 17 |
-|  4c 8c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 17 |
-|  4c 9c | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  4c10c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  4c Jc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  4c Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  4c Kc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  5c 6c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  5c 7c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-|  5c 8c | <1 | <1 | <1 |  2 |  6 |  6 |  4 | 22 | 42 | 17 |
-|  5c 9c | <1 | <1 | <1 |  2 |  7 |  5 |  4 | 22 | 43 | 17 |
-|  5c10c | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  5c Jc | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  5c Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  5c Kc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  6c 7c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  6c 8c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-|  6c 9c | <1 | <1 | <1 |  2 |  6 |  6 |  4 | 22 | 42 | 17 |
-|  6c10c | <1 | <1 | <1 |  2 |  7 |  5 |  4 | 22 | 43 | 17 |
-|  6c Jc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  6c Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 43 | 18 |
-|  6c Kc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  7c 8c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  7c 9c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-|  7c10c | <1 | <1 | <1 |  2 |  6 |  6 |  4 | 22 | 42 | 17 |
-|  7c Jc | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 17 |
-|  7c Qc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  7c Kc | <1 | <1 | <1 |  2 |  7 |  3 |  4 | 22 | 44 | 18 |
-|  8c 9c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  8c10c | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-|  8c Jc | <1 | <1 | <1 |  2 |  6 |  6 |  4 | 22 | 42 | 17 |
-|  8c Qc | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-|  8c Kc | <1 | <1 | <1 |  2 |  7 |  2 |  4 | 22 | 44 | 18 |
-|  9c10c | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-|  9c Jc | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 17 |
-|  9c Qc | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  9c Kc | <1 | <1 | <1 |  2 |  7 |  4 |  4 | 22 | 43 | 18 |
-| 10c Jc | <1 | <1 | <1 |  2 |  6 |  9 |  4 | 22 | 41 | 16 |
-| 10c Qc | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 41 | 16 |
-| 10c Kc | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  Jc Qc | <1 | <1 | <1 |  2 |  6 |  7 |  4 | 22 | 42 | 17 |
-|  Jc Kc | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 17 |
-|  Qc Kc | <1 | <1 | <1 |  2 |  6 |  5 |  4 | 22 | 42 | 18 |
+Each client sends and receives messages to the table, which the backend shares with all other players. The user who clicks "Deal flop" generates a random seed that is shared with all other players. So each player's client knows what cards others have but just hides it from them until the showdown. This works well for local games, where you can trust all players to not run custom JavaScript code and cheat.

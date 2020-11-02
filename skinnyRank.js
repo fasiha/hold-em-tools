@@ -327,21 +327,20 @@ function bestFlushUnsafe(hand) {
     return suits[0].slice(-5).split('').reverse().map(shortToNumberAcesHigh);
 }
 const comb_1 = require("./comb");
-const utils_1 = require("./utils");
-const { writeFile } = require('fs');
 if (require.main === module) {
-    let args = process.argv.slice(2);
-    const r = parseInt(args[0]) || 5;
-    let arr = new Uint8Array((r + 1) * utils_1.ncr(shorts.length, r));
-    let i = 0;
-    for (let hand of comb_1.combinations(shorts, r)) {
-        let s = hand.join('');
-        let n = fastScore(s);
-        Buffer.from(s).copy(arr, i * (r + 1));
-        arr[i * (r + 1) + r] = n;
-        if (((++i) % 1e5) === 0) {
-            console.log(i / 1e6);
+    const { writeFileSync } = require('fs');
+    const totalCards = 7;
+    for (const ncards of [2, 3]) {
+        const initialToHistogram = {};
+        for (const initial of comb_1.combinations(shorts, ncards)) {
+            const remainingCards = shorts.filter(c => !initial.includes(c));
+            const histogram = Array.from(Array(11), _ => 0); // why 11? Since fastScore returns 1 to 10, make this one longer
+            for (const rest of comb_1.combinations(remainingCards, totalCards - ncards)) {
+                histogram[fastScore(initial.concat(rest).sort().join(''))]++;
+            }
+            initialToHistogram[initial.join('')] = histogram.slice(1); // remove initial element because it'll be empty
+            console.log(`["${initial.join('')}",[${histogram.slice(1).join(',')}]]`);
         }
+        writeFileSync(`map-r-${totalCards}-n-${ncards}.json`, JSON.stringify(initialToHistogram));
     }
-    writeFile('handsScore-' + r + '.bin', arr, (err) => console.log(err));
 }
