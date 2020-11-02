@@ -21,3 +21,16 @@ tbody th {
 table caption {
   padding-top: 1em;
 }
+
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #505;
+  color: white;
+  text-align: center;
+}
+.footer a {
+  color: white;
+}
