@@ -128,10 +128,10 @@ const Table = mobx_react_lite_1.observer(function Table() {
     const analysis = exports.table.analysis;
     if (analysis) {
         console.log(mobx_1.toJS(analysis), '!');
-        const my = analysis.my ? formatHistogram(analysis.my) : undefined;
-        const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
-        const numbers = handNames.map((name, i) => `${name}: ${my ? my[i] + '%' : ''} ${rest ? `(others: ${rest[i]}%)` : ''}`);
-        analysisComp = react_1.createElement('div', null, 'My current hand is a: ', react_1.createElement('strong', null, shortsToReadableScore((exports.table.board || []).concat(exports.table.pocket || []))), '. Here are the probabilities of what this hand might turn into:', react_1.createElement('ul', null, ...numbers.map(s => react_1.createElement('li', null, s))));
+        const my = analysis.my ? formatHistogram(analysis.my) : [];
+        const rest = analysis.rest ? formatHistogram(analysis.rest) : [];
+        const grid = react_1.createElement('table', null, react_1.createElement('caption', null, 'Probabilities'), react_1.createElement('thead', null, react_1.createElement('tr', null, ...['Hand', 'Me', 'Others'].map(s => react_1.createElement('th', { scope: 'col' }, s)))), react_1.createElement('tbody', null, ...handNames.map((hand, i) => react_1.createElement('tr', null, react_1.createElement('th', { scope: 'row' }, hand), react_1.createElement('td', null, my[i] || '—'), react_1.createElement('td', null, rest[i] || '—')))));
+        analysisComp = react_1.createElement('div', null, 'My current hand is a: ', react_1.createElement('strong', null, shortsToReadableScore((exports.table.board || []).concat(exports.table.pocket || []))), grid);
     }
     const advanceGame = buttonText ? react_1.createElement('button', { onClick: mobx_1.action(onClick) }, buttonText) : '';
     return react_1.createElement('div', null, tableName, myName, allPlayers, advanceGame, cards, analysisComp);
@@ -234,7 +234,7 @@ function sortedUnique(v) { return Array.from(new Set(v)).sort(); }
 function assertNever(never) { throw new Error(never); }
 function formatHistogram(v) {
     const sum = v.reduce((p, c) => p + c);
-    return v.map(x => Math.round(x / sum * 1000) / 10);
+    return v.map(x => `${Math.round(x / sum * 1000) / 10}%`);
 }
 function shortsToReadableScore(v) { return handNames[skinnyRank_1.fastScore(v.sort().join('')) - 1]; }
 const suitToEmoji = {

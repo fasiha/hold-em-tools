@@ -2,3 +2,22 @@
   font-weight: bold;
   font-size:large;
 }
+
+td {
+  width: 4em;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+td:nth-child(2) {
+  font-weight: bold;
+}
+th:nth-child(1) {
+  text-align: right;
+}
+tbody th {
+  font-weight: normal;
+  font-style: italic;
+}
+table caption {
+  padding-top: 1em;
+}

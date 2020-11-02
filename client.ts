@@ -150,14 +150,29 @@ const Table = observer(function Table() {
   const analysis = table.analysis;
   if (analysis) {
     console.log(toJS(analysis), '!');
-    const my = analysis.my ? formatHistogram(analysis.my) : undefined;
-    const rest = analysis.rest ? formatHistogram(analysis.rest) : undefined;
-    const numbers =
-        handNames.map((name, i) => `${name}: ${my ? my[i] + '%' : ''} ${rest ? `(others: ${rest[i]}%)` : ''}`);
-    analysisComp = ce('div', null, 'My current hand is a: ',
-                      ce('strong', null, shortsToReadableScore((table.board || []).concat(table.pocket || []))),
-                      '. Here are the probabilities of what this hand might turn into:',
-                      ce('ul', null, ...numbers.map(s => ce('li', null, s))));
+    const my = analysis.my ? formatHistogram(analysis.my) : [];
+    const rest = analysis.rest ? formatHistogram(analysis.rest) : [];
+    const grid = ce(
+        'table',
+        null,
+        ce('caption', null, 'Probabilities'),
+        ce('thead', null, ce('tr', null, ...['Hand', 'Me', 'Others'].map(s => ce('th', {scope: 'col'}, s)))),
+        ce('tbody', null,
+           ...handNames.map((hand, i) => ce(
+                                'tr',
+                                null,
+                                ce('th', {scope: 'row'}, hand),
+                                ce('td', null, my[i] || '—'),
+                                ce('td', null, rest[i] || '—'),
+                                ))),
+    )
+    analysisComp = ce(
+        'div',
+        null,
+        'My current hand is a: ',
+        ce('strong', null, shortsToReadableScore((table.board || []).concat(table.pocket || []))),
+        grid,
+    );
   }
 
   const advanceGame = buttonText ? ce('button', {onClick: action(onClick)}, buttonText) : '';
@@ -265,7 +280,7 @@ function sortedUnique<T>(v: T[]): T[] { return Array.from(new Set(v)).sort(); }
 function assertNever(never: never) { throw new Error(never); }
 function formatHistogram(v: number[]) {
   const sum = v.reduce((p, c) => p + c);
-  return v.map(x => Math.round(x / sum * 1000) / 10);
+  return v.map(x => `${Math.round(x / sum * 1000) / 10}%`);
 }
 function shortsToReadableScore(v: string[]) { return handNames[fastScore(v.sort().join('')) - 1]; }
 const suitToEmoji: Record<string, string> = {
