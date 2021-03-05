@@ -13,7 +13,7 @@ Here's what the app looks like, with three browsers standing in for three users:
 To play:
 - Familiarize yourself with Texas hold 'em basics: [Pagat](https://www.pagat.com/poker/variants/texasholdem.html)
 - Go to https://callfaye.glitch.me/
-- (open multiple tabs if you don't have a friend hany)
+- (open multiple tabs if you don't have a friend handy)
 - Get everyone to enter the same table name
 - Get everyone to click 'Announce'
 - All players will see each other
