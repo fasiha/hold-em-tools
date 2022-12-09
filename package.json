@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "compression": "^1.7.4",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "knuth-shuffle-seeded": "^1.0.6",
     "mobx": "^6.0.1",
     "mobx-react-lite": "^3.0.1",
